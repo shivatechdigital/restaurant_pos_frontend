@@ -1,6 +1,6 @@
 class ApiConfig {
-  static const String baseUrl = 'http://localhost:3000/api';
-  static const String socketUrl = 'http://localhost:3000';
+  static const String baseUrl = 'http://48.217.50.135/api';
+  static const String socketUrl = 'http://48.217.50.135';
 
   // Auth
   static const String sendOtp = '$baseUrl/auth/send-otp';
@@ -22,7 +22,7 @@ class ApiConfig {
   static const String addItem = '$baseUrl/menu/items';
   static String toggleItem(int id) => '$baseUrl/menu/items/$id/toggle';
   static const String uploadMenuImage = '$baseUrl/menu/upload-image';
-  // e.g. http://localhost:3000 (baseUrl without the /api suffix), used to resolve relative image URLs
+  // e.g. http://48.217.50.135 (baseUrl without the /api suffix), used to resolve relative image URLs
   static String get serverOrigin => baseUrl.replaceAll('/api', '');
 
   // Tables

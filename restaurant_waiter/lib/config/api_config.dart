@@ -1,6 +1,6 @@
 class ApiConfig {
-  static const String baseUrl = 'http://localhost:3000/api';
-  static const String socketUrl = 'http://localhost:3000';
+  static const String baseUrl = 'http://48.217.50.135/api';
+  static const String socketUrl = 'http://48.217.50.135';
 
   static const String sendOtp = '$baseUrl/auth/send-otp';
   static const String verifyOtp = '$baseUrl/auth/verify-otp';

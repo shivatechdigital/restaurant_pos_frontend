@@ -13,7 +13,7 @@ import 'screens/reception_menu_screen.dart';
 import 'screens/reception_settings_screen.dart';
 
 const _brand = Color(0xFFB51E2B);
-const _baseUrl = 'http://localhost:3000/api';
+const _baseUrl = 'http://48.217.50.135/api';
 
 void main() => runApp(const ReceptionApp());
 
