@@ -17,5 +17,5 @@ class AppTheme {
   static const Color statusCleaning = Color(0xFFFF9800);
   static const Color statusOutOfService = Color(0xFF757575);
 
-  static const String apiBaseUrl = 'http://48.217.50.135/api';
+  static const String apiBaseUrl = 'https://petpooja.shivatechdigital.com/api';
 }

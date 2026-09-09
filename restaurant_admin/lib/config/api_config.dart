@@ -1,6 +1,6 @@
 class ApiConfig {
-  static const String baseUrl = 'http://48.217.50.135/api';
-  static const String socketUrl = 'http://48.217.50.135';
+  static const String baseUrl = 'https://petpooja.shivatechdigital.com/api';
+  static const String socketUrl = 'https://petpooja.shivatechdigital.com';
 
   // Auth
   static const String sendOtp = '$baseUrl/auth/send-otp';
@@ -22,7 +22,7 @@ class ApiConfig {
   static const String addItem = '$baseUrl/menu/items';
   static String toggleItem(int id) => '$baseUrl/menu/items/$id/toggle';
   static const String uploadMenuImage = '$baseUrl/menu/upload-image';
-  // e.g. http://48.217.50.135 (baseUrl without the /api suffix), used to resolve relative image URLs
+  // Domain origin without the /api suffix, used to resolve relative image URLs.
   static String get serverOrigin => baseUrl.replaceAll('/api', '');
 
   // Tables

@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'screens/reception_pos_screen.dart';
 
 const _tableBrand = Color(0xFFB51E2B);
-const _tableApiBaseUrl = 'http://48.217.50.135/api';
+const _tableApiBaseUrl = 'https://petpooja.shivatechdigital.com/api';
 
 class ReceptionTableView extends StatefulWidget {
   final String token;

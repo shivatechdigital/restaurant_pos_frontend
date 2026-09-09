@@ -1,7 +1,7 @@
 class ApiConfig {
   // Development
-  static const String baseUrl = 'http://48.217.50.135/api';
-  static const String socketUrl = 'http://48.217.50.135';
+    static const String baseUrl = 'https://petpooja.shivatechdigital.com/api';
+    static const String socketUrl = 'https://petpooja.shivatechdigital.com';
 
   // Production (jab GCP pe deploy karo)
   // static const String baseUrl = 'https://api.yourdomain.com/api';

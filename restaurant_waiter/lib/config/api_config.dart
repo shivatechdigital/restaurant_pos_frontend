@@ -1,6 +1,6 @@
 class ApiConfig {
-  static const String baseUrl = 'http://48.217.50.135/api';
-  static const String socketUrl = 'http://48.217.50.135';
+  static const String baseUrl = 'https://petpooja.shivatechdigital.com/api';
+  static const String socketUrl = 'https://petpooja.shivatechdigital.com';
 
   static const String sendOtp = '$baseUrl/auth/send-otp';
   static const String verifyOtp = '$baseUrl/auth/verify-otp';
