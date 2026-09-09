@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import '../config/api_config.dart';
 import '../providers/admin_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/app_sidebar.dart';
@@ -55,7 +56,7 @@ class _TableManagementScreenState extends State<TableManagementScreen>
   Future<void> _loadQrBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    setState(() => _qrBaseUrl = prefs.getString(_qrBaseUrlPrefKey) ?? '');
+    setState(() => _qrBaseUrl = prefs.getString(_qrBaseUrlPrefKey) ?? ApiConfig.serverOrigin);
   }
 
   Future<void> _saveQrBaseUrl(String value) async {
@@ -1086,14 +1087,15 @@ class _TableManagementScreenState extends State<TableManagementScreen>
   String _qrValueFor(dynamic table) {
     final number = table['table_number'] ?? table['number'] ?? '';
     final restaurantId = context.read<AdminProvider>().restaurantId;
-    final base = _qrBaseUrl.trim().isEmpty ? 'http://localhost:PORT' : _qrBaseUrl.trim();
-    final separator = base.contains('?') ? '&' : '?';
-    return '$base$separator' 'table=$number&restaurant=$restaurantId';
+    final base = _qrBaseUrl.trim().isEmpty ? ApiConfig.serverOrigin : _qrBaseUrl.trim();
+    final normalizedBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    final separator = normalizedBase.contains('?') ? '&' : '?';
+    return '$normalizedBase$separator' 'table=$number&restaurant=$restaurantId';
   }
 
   void _showQrDialog(dynamic table) {
     final number = table['table_number'] ?? table['number'] ?? '—';
-    final urlCtrl = TextEditingController(text: _qrBaseUrl);
+    final urlCtrl = TextEditingController(text: _qrBaseUrl.trim().isEmpty ? ApiConfig.serverOrigin : _qrBaseUrl);
 
     showDialog(
       context: context,
