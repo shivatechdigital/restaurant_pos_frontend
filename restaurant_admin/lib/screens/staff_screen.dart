@@ -130,10 +130,29 @@ class _StaffScreenState extends State<StaffScreen>
             subtitle: Text(
               '${member['phone'] ?? ''} • ${(member['role'] ?? '').toString().toUpperCase()}',
             ),
-            trailing: Switch(
-              value: active,
-              onChanged: (value) =>
-                  _updateMember(admin, member, isActive: value),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Switch(
+                  value: active,
+                  onChanged: (value) =>
+                      _updateMember(admin, member, isActive: value),
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'Staff actions',
+                  onSelected: (action) {
+                    if (action == 'edit') {
+                      _showStaffDialog(admin, member: member);
+                    } else if (action == 'delete') {
+                      _confirmDeleteStaff(admin, member);
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('Edit details')),
+                    PopupMenuItem(value: 'delete', child: Text('Delete staff')),
+                  ],
+                ),
+              ],
             ),
             onTap: () => _showStaffDialog(admin, member: member),
           ),
@@ -204,8 +223,17 @@ class _StaffScreenState extends State<StaffScreen>
 
   Future<void> _showStaffDialog(AdminProvider admin, {dynamic member}) async {
     final nameCtrl = TextEditingController(text: member?['name'] ?? '');
-    final phoneCtrl = TextEditingController(text: member?['phone'] ?? '');
+    final savedPhone = (member?['phone'] ?? '').toString().replaceAll(
+      RegExp(r'\D'),
+      '',
+    );
+    final phoneCtrl = TextEditingController(
+      text: savedPhone.length == 12 && savedPhone.startsWith('91')
+          ? savedPhone.substring(2)
+          : savedPhone,
+    );
     String role = member?['role'] ?? 'waiter';
+    String? formError;
 
     await showDialog<void>(
       context: context,
@@ -219,12 +247,10 @@ class _StaffScreenState extends State<StaffScreen>
             children: [
               TextField(
                 controller: nameCtrl,
-                enabled: member == null,
                 decoration: const InputDecoration(labelText: 'Name'),
               ),
               TextField(
                 controller: phoneCtrl,
-                enabled: member == null,
                 keyboardType: TextInputType.phone,
                 maxLength: 10,
                 inputFormatters: [
@@ -237,13 +263,24 @@ class _StaffScreenState extends State<StaffScreen>
                   counterText: '',
                 ),
               ),
+              if (formError != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    formError!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
               DropdownButtonFormField<String>(
                 initialValue: role,
                 decoration: const InputDecoration(labelText: 'Role'),
                 items: const [
                   DropdownMenuItem(value: 'waiter', child: Text('Waiter')),
                   DropdownMenuItem(value: 'kitchen', child: Text('Kitchen')),
-                  DropdownMenuItem(value: 'reception', child: Text('Reception')),
+                  DropdownMenuItem(
+                    value: 'reception',
+                    child: Text('Reception'),
+                  ),
                   DropdownMenuItem(value: 'admin', child: Text('Admin')),
                 ],
                 onChanged: (value) => setDialogState(() => role = value!),
@@ -257,6 +294,14 @@ class _StaffScreenState extends State<StaffScreen>
             ),
             ElevatedButton(
               onPressed: () async {
+                if (nameCtrl.text.trim().isEmpty) {
+                  setDialogState(() => formError = 'Name is required');
+                  return;
+                }
+                if (phoneCtrl.text.length != 10) {
+                  setDialogState(() => formError = 'Enter all 10 phone digits');
+                  return;
+                }
                 Navigator.pop(ctx);
                 final ok = member == null
                     ? await admin.createStaff({
@@ -264,7 +309,9 @@ class _StaffScreenState extends State<StaffScreen>
                         'phone': phoneCtrl.text.trim(),
                         'role': role,
                       })
-                    : await admin.updateStaffMember(member['id'], {
+                    : await admin.updateStaffMember(member['id'] as int, {
+                        'name': nameCtrl.text.trim(),
+                        'phone': phoneCtrl.text.trim(),
                         'role': role,
                       });
                 if (!mounted) return;
@@ -283,6 +330,40 @@ class _StaffScreenState extends State<StaffScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteStaff(AdminProvider admin, dynamic member) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete staff member?'),
+        content: Text(
+          '${member['name']} (${member['phone']}) will be removed. This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final ok = await admin.deleteStaffMember(member['id'] as int);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? 'Staff member deleted' : (admin.staffError ?? 'Delete failed'),
+        ),
+        backgroundColor: ok ? Colors.green : Colors.red,
       ),
     );
   }

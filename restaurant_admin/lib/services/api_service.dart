@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../config/api_config.dart';
 
 class ApiService {
@@ -50,7 +52,9 @@ class ApiService {
       await prefs.setString('admin_phone', phone);
       await prefs.setString('admin_name', data['data']['user']['name']);
       await prefs.setInt(
-          'restaurant_id', data['data']['user']['restaurant_id'] ?? 1);
+        'restaurant_id',
+        data['data']['user']['restaurant_id'] ?? 1,
+      );
     }
     return data;
   }
@@ -58,57 +62,105 @@ class ApiService {
   // ---- DASHBOARD ----
   Future<Map<String, dynamic>> getDashboard() async {
     final res = await http.get(
-        Uri.parse(ApiConfig.dashboard), headers: await _headers());
+      Uri.parse(ApiConfig.dashboard),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getOrderPolicy() async {
-    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/settings/order-policy'), headers: await _headers());
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/settings/order-policy'),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getDeliveryPartners() async {
-    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/fulfillment/partners'), headers: await _headers());
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/fulfillment/partners'),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> createDeliveryPartner(Map<String, dynamic> body) async {
-    final res = await http.post(Uri.parse('${ApiConfig.baseUrl}/fulfillment/partners'), headers: await _headers(), body: jsonEncode(body));
+  Future<Map<String, dynamic>> createDeliveryPartner(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/fulfillment/partners'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getReservations() async {
-    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/fulfillment/reservations'), headers: await _headers());
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/fulfillment/reservations'),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> createReservation(Map<String, dynamic> body) async {
-    final res = await http.post(Uri.parse('${ApiConfig.baseUrl}/fulfillment/reservations'), headers: await _headers(), body: jsonEncode(body));
+  Future<Map<String, dynamic>> createReservation(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/fulfillment/reservations'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> checkInReservation(int id) async {
-    final res = await http.post(Uri.parse('${ApiConfig.baseUrl}/fulfillment/reservations/$id/check-in'), headers: await _headers());
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/fulfillment/reservations/$id/check-in'),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> assignDelivery(int orderId, int partnerId) async {
-    final res = await http.post(Uri.parse('${ApiConfig.baseUrl}/fulfillment/delivery/$orderId/assign'), headers: await _headers(), body: jsonEncode({'partner_id': partnerId}));
+  Future<Map<String, dynamic>> assignDelivery(
+    int orderId,
+    int partnerId,
+  ) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/fulfillment/delivery/$orderId/assign'),
+      headers: await _headers(),
+      body: jsonEncode({'partner_id': partnerId}),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> updateDeliveryStatus(int orderId, String status) async {
-    final res = await http.patch(Uri.parse('${ApiConfig.baseUrl}/fulfillment/delivery/$orderId/status'), headers: await _headers(), body: jsonEncode({'status': status}));
+  Future<Map<String, dynamic>> updateDeliveryStatus(
+    int orderId,
+    String status,
+  ) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/fulfillment/delivery/$orderId/status'),
+      headers: await _headers(),
+      body: jsonEncode({'status': status}),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> updateOrderPolicy(Map<String, dynamic> body) async {
-    final res = await http.patch(Uri.parse('${ApiConfig.baseUrl}/settings/order-policy'), headers: await _headers(), body: jsonEncode(body));
+  Future<Map<String, dynamic>> updateOrderPolicy(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/settings/order-policy'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getDailyClosing({String? date}) async {
-    final url = date == null ? ApiConfig.dailyClosing : '${ApiConfig.dailyClosing}?date=$date';
+    final url = date == null
+        ? ApiConfig.dailyClosing
+        : '${ApiConfig.dailyClosing}?date=$date';
     final res = await http.get(Uri.parse(url), headers: await _headers());
     return _decode(res);
   }
@@ -123,95 +175,151 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> getCashShifts({String? date}) async {
-    final url = date == null ? '${ApiConfig.baseUrl}/reports/cash-shifts' : '${ApiConfig.baseUrl}/reports/cash-shifts?date=$date';
+    final url = date == null
+        ? '${ApiConfig.baseUrl}/reports/cash-shifts'
+        : '${ApiConfig.baseUrl}/reports/cash-shifts?date=$date';
     final res = await http.get(Uri.parse(url), headers: await _headers());
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> openCashShift(Map<String, dynamic> body) async {
-    final res = await http.post(Uri.parse('${ApiConfig.baseUrl}/reports/cash-shifts'), headers: await _headers(), body: jsonEncode(body));
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/reports/cash-shifts'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> closeCashShift(int id, Map<String, dynamic> body) async {
-    final res = await http.post(Uri.parse('${ApiConfig.baseUrl}/reports/cash-shifts/$id/close'), headers: await _headers(), body: jsonEncode(body));
+  Future<Map<String, dynamic>> closeCashShift(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/reports/cash-shifts/$id/close'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> reopenDay(String date, String reason) async {
-    final res = await http.delete(Uri.parse('${ApiConfig.dailyClosing}/$date'), headers: await _headers(), body: jsonEncode({'reason': reason}));
+    final res = await http.delete(
+      Uri.parse('${ApiConfig.dailyClosing}/$date'),
+      headers: await _headers(),
+      body: jsonEncode({'reason': reason}),
+    );
     return _decode(res);
   }
 
   Future<String?> downloadDailyClosingCsv(String date) async {
-    final res = await http.get(Uri.parse('${ApiConfig.dailyClosing}/export?date=$date'), headers: await _headers());
+    final res = await http.get(
+      Uri.parse('${ApiConfig.dailyClosing}/export?date=$date'),
+      headers: await _headers(),
+    );
     return res.statusCode == 200 ? res.body : null;
   }
 
   Future<Map<String, dynamic>> getTopItems({int days = 7}) async {
     final res = await http.get(
-        Uri.parse('${ApiConfig.topItems}?days=$days'),
-        headers: await _headers());
+      Uri.parse('${ApiConfig.topItems}?days=$days'),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> getRevenue(
-      {String period = 'daily', String? start, String? end}) async {
+  Future<Map<String, dynamic>> getRevenue({
+    String period = 'daily',
+    String? start,
+    String? end,
+  }) async {
     String url = '${ApiConfig.revenue}?period=$period';
     if (start != null) url += '&start_date=$start&end_date=$end';
-    final res =
-        await http.get(Uri.parse(url), headers: await _headers());
+    final res = await http.get(Uri.parse(url), headers: await _headers());
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getPeakHours() async {
     final res = await http.get(
-        Uri.parse(ApiConfig.peakHours), headers: await _headers());
+      Uri.parse(ApiConfig.peakHours),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getStaffPerformance() async {
     final res = await http.get(
-        Uri.parse(ApiConfig.staffPerf), headers: await _headers());
+      Uri.parse(ApiConfig.staffPerf),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getStaffMembers() async {
-    final res = await http.get(Uri.parse(ApiConfig.staffMembers), headers: await _headers());
+    final res = await http.get(
+      Uri.parse(ApiConfig.staffMembers),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getCoupons() async {
-    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/discounts/coupons'), headers: await _headers());
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/discounts/coupons'),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> getCustomers({String? search, String? segment}) async {
+  Future<Map<String, dynamic>> getCustomers({
+    String? search,
+    String? segment,
+  }) async {
     final parameters = <String, String>{};
     if (search != null && search.isNotEmpty) parameters['search'] = search;
     if (segment != null && segment.isNotEmpty) parameters['segment'] = segment;
-    final url = Uri.parse('${ApiConfig.baseUrl}/customers').replace(queryParameters: parameters.isEmpty ? null : parameters).toString();
+    final url = Uri.parse('${ApiConfig.baseUrl}/customers')
+        .replace(queryParameters: parameters.isEmpty ? null : parameters)
+        .toString();
     final res = await http.get(Uri.parse(url), headers: await _headers());
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> getCustomer(int id) async {
-    final res = await http.get(Uri.parse('${ApiConfig.baseUrl}/customers/$id'), headers: await _headers());
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/customers/$id'),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> updateCustomer(int id, Map<String, dynamic> body) async {
-    final res = await http.patch(Uri.parse('${ApiConfig.baseUrl}/customers/$id'), headers: await _headers(), body: jsonEncode(body));
+  Future<Map<String, dynamic>> updateCustomer(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/customers/$id'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> createCoupon(Map<String, dynamic> body) async {
-    final res = await http.post(Uri.parse('${ApiConfig.baseUrl}/discounts/coupons'), headers: await _headers(), body: jsonEncode(body));
+    final res = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/discounts/coupons'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
     return _decode(res);
   }
 
   Future<Map<String, dynamic>> toggleCoupon(int id, bool isActive) async {
-    final res = await http.patch(Uri.parse('${ApiConfig.baseUrl}/discounts/coupons/$id'), headers: await _headers(), body: jsonEncode({'is_active': isActive}));
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/discounts/coupons/$id'),
+      headers: await _headers(),
+      body: jsonEncode({'is_active': isActive}),
+    );
     return _decode(res);
   }
 
@@ -224,7 +332,10 @@ class ApiService {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> updateStaff(int id, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> updateStaff(
+    int id,
+    Map<String, dynamic> body,
+  ) async {
     final res = await http.patch(
       Uri.parse(ApiConfig.updateStaff(id)),
       headers: await _headers(),
@@ -233,28 +344,40 @@ class ApiService {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> getAuditLogs() async {
-    final res = await http.get(Uri.parse(ApiConfig.auditLogs), headers: await _headers());
+  Future<Map<String, dynamic>> deleteStaff(int id) async {
+    final res = await http.delete(
+      Uri.parse(ApiConfig.deleteStaff(id)),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> getGSTReport(
-      String month, String year) async {
+  Future<Map<String, dynamic>> getAuditLogs() async {
     final res = await http.get(
-        Uri.parse(ApiConfig.gstReport(month, year)),
-        headers: await _headers());
+      Uri.parse(ApiConfig.auditLogs),
+      headers: await _headers(),
+    );
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getGSTReport(String month, String year) async {
+    final res = await http.get(
+      Uri.parse(ApiConfig.gstReport(month, year)),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
   // ---- MENU ----
   Future<Map<String, dynamic>> getMenu(String rId) async {
     final res = await http.get(
-        Uri.parse(ApiConfig.menu(rId)), headers: await _headers());
+      Uri.parse(ApiConfig.menu(rId)),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> addCategory(
-      String name, int order) async {
+  Future<Map<String, dynamic>> addCategory(String name, int order) async {
     final res = await http.post(
       Uri.parse(ApiConfig.addCategory),
       headers: await _headers(),
@@ -271,8 +394,7 @@ class ApiService {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> addMenuItem(
-      Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> addMenuItem(Map<String, dynamic> body) async {
     final res = await http.post(
       Uri.parse(ApiConfig.addItem),
       headers: await _headers(),
@@ -282,7 +404,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> updateMenuItem(
-      int id, Map<String, dynamic> body) async {
+    int id,
+    Map<String, dynamic> body,
+  ) async {
     final res = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/menu/items/$id'),
       headers: await _headers(),
@@ -299,18 +423,25 @@ class ApiService {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> uploadMenuImage(List<int> bytes, String filename) async {
+  Future<Map<String, dynamic>> uploadMenuImage(
+    List<int> bytes,
+    String filename,
+  ) async {
     final token = await _getToken();
-    final request = http.MultipartRequest('POST', Uri.parse(ApiConfig.uploadMenuImage));
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(ApiConfig.uploadMenuImage),
+    );
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
-    request.files.add(http.MultipartFile.fromBytes('image', bytes, filename: filename));
+    request.files.add(
+      http.MultipartFile.fromBytes('image', bytes, filename: filename),
+    );
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> toggleItem(
-      int id, bool available) async {
+  Future<Map<String, dynamic>> toggleItem(int id, bool available) async {
     final res = await http.patch(
       Uri.parse(ApiConfig.toggleItem(id)),
       headers: await _headers(),
@@ -322,11 +453,16 @@ class ApiService {
   // ---- TABLES ----
   Future<Map<String, dynamic>> getTables() async {
     final res = await http.get(
-        Uri.parse(ApiConfig.tables), headers: await _headers());
+      Uri.parse(ApiConfig.tables),
+      headers: await _headers(),
+    );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> updateTableStatus(int tableId, String status) async {
+  Future<Map<String, dynamic>> updateTableStatus(
+    int tableId,
+    String status,
+  ) async {
     final res = await http.patch(
       Uri.parse('${ApiConfig.baseUrl}/tables/$tableId/status'),
       headers: await _headers(),
@@ -343,33 +479,50 @@ class ApiService {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> mergeTables(int sourceSessionId, int targetSessionId) async {
+  Future<Map<String, dynamic>> mergeTables(
+    int sourceSessionId,
+    int targetSessionId,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/waiter/table/merge'),
       headers: await _headers(),
-      body: jsonEncode({'source_session_id': sourceSessionId, 'target_session_id': targetSessionId}),
+      body: jsonEncode({
+        'source_session_id': sourceSessionId,
+        'target_session_id': targetSessionId,
+      }),
     );
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> collectPayment(int sessionId, double amount, String method) async {
+  Future<Map<String, dynamic>> collectPayment(
+    int sessionId,
+    double amount,
+    String method,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/payments/cash'),
       headers: await _headers(),
-      body: jsonEncode({'session_id': sessionId, 'amount': amount, 'payment_method': method}),
+      body: jsonEncode({
+        'session_id': sessionId,
+        'amount': amount,
+        'payment_method': method,
+      }),
     );
     return _decode(res);
   }
 
   // ---- ORDERS ----
-  Future<Map<String, dynamic>> getAllOrders(
-      {String? date, String? status, int? orderId, int page = 1}) async {
+  Future<Map<String, dynamic>> getAllOrders({
+    String? date,
+    String? status,
+    int? orderId,
+    int page = 1,
+  }) async {
     String url = '${ApiConfig.allOrders}?page=$page';
     if (date != null) url += '&date=$date';
     if (status != null && status.isNotEmpty) url += '&status=$status';
     if (orderId != null) url += '&order_id=$orderId';
-    final res =
-        await http.get(Uri.parse(url), headers: await _headers());
+    final res = await http.get(Uri.parse(url), headers: await _headers());
     return _decode(res);
   }
 
@@ -420,7 +573,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> updateInventoryRequestStatus(
-      int id, String status) async {
+    int id,
+    String status,
+  ) async {
     final res = await http.patch(
       Uri.parse('${ApiConfig.baseUrl}/inventory/requests/$id/status'),
       headers: await _headers(),
@@ -447,15 +602,15 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> adjustMaterial(
-      int id, double changeQty, String type, String notes) async {
+    int id,
+    double changeQty,
+    String type,
+    String notes,
+  ) async {
     final res = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/inventory/materials/$id/adjust'),
       headers: await _headers(),
-      body: jsonEncode({
-        'change_qty': changeQty,
-        'type': type,
-        'notes': notes,
-      }),
+      body: jsonEncode({'change_qty': changeQty, 'type': type, 'notes': notes}),
     );
     return _decode(res);
   }
@@ -518,7 +673,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> saveRecipe(
-      int menuItemId, List<Map<String, dynamic>> materials) async {
+    int menuItemId,
+    List<Map<String, dynamic>> materials,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/inventory/recipes/$menuItemId'),
       headers: await _headers(),

@@ -37,4 +37,5 @@ class ApiConfig {
   static const String staffMembers = '$baseUrl/staff';
   static const String auditLogs = '$baseUrl/staff/audit/logs';
   static String updateStaff(int id) => '$baseUrl/staff/$id';
+  static String deleteStaff(int id) => '$baseUrl/staff/$id';
 }

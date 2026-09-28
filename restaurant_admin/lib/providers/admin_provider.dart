@@ -553,7 +553,8 @@ class AdminProvider extends ChangeNotifier {
         await loadAuditLogs();
         return true;
       }
-      staffError = r['message']?.toString() ?? 'Staff member could not be saved';
+      staffError =
+          r['message']?.toString() ?? 'Staff member could not be saved';
     } catch (e) {
       debugPrint('Create staff error: $e');
       staffError = e.toString();
@@ -562,6 +563,7 @@ class AdminProvider extends ChangeNotifier {
   }
 
   Future<bool> updateStaffMember(int id, Map<String, dynamic> body) async {
+    staffError = null;
     try {
       final r = await _api.updateStaff(id, body);
       if (r['success'] == true) {
@@ -569,8 +571,29 @@ class AdminProvider extends ChangeNotifier {
         await loadAuditLogs();
         return true;
       }
+      staffError =
+          r['message']?.toString() ?? 'Staff member could not be updated';
     } catch (e) {
       debugPrint('Update staff error: $e');
+      staffError = e.toString();
+    }
+    return false;
+  }
+
+  Future<bool> deleteStaffMember(int id) async {
+    staffError = null;
+    try {
+      final r = await _api.deleteStaff(id);
+      if (r['success'] == true) {
+        await loadStaffMembers();
+        await loadAuditLogs();
+        return true;
+      }
+      staffError =
+          r['message']?.toString() ?? 'Staff member could not be deleted';
+    } catch (e) {
+      debugPrint('Delete staff error: $e');
+      staffError = e.toString();
     }
     return false;
   }
