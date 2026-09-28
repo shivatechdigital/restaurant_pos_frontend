@@ -122,11 +122,13 @@ class OrderProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final phone = prefs.getString('phone') ?? '';
+      final customerName = prefs.getString('customer_name') ?? 'Customer';
 
       final result = await _api.placeOrder(
         tableId: tableId,
         restaurantId: restaurantId,
         phone: phone,
+        name: customerName,
         items: items,
         notes: notes,
         sessionId: _sessionId != null ? int.tryParse(_sessionId!) : null,

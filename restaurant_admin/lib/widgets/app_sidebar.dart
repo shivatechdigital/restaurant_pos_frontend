@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../screens/main_dashboard.dart';
 import '../screens/pos_counter_screen.dart';
 import '../screens/orders_screen.dart';
@@ -6,6 +7,7 @@ import '../screens/table_management_screen.dart';
 import '../screens/menu_management_screen.dart';
 import '../screens/inventory_requests_screen.dart';
 import '../screens/customers_screen.dart';
+import '../screens/bill_management_screen.dart';
 import '../screens/staff_screen.dart';
 import '../screens/reports_screen.dart';
 import '../screens/coupons_screen.dart';
@@ -57,6 +59,7 @@ class AppSidebar extends StatelessWidget {
     {'icon': Icons.dashboard, 'label': 'Dashboard'},
     {'icon': Icons.point_of_sale, 'label': 'POS Counter'},
     {'icon': Icons.receipt_long, 'label': 'Orders'},
+    {'icon': Icons.payments, 'label': 'Bill Management'},
     {'icon': Icons.table_restaurant, 'label': 'Table Management'},
     {'icon': Icons.restaurant_menu, 'label': 'Menu Management'},
     {'icon': Icons.inventory_2, 'label': 'Inventory'},
@@ -78,6 +81,7 @@ class AppSidebar extends StatelessWidget {
       'Dashboard' => const MainDashboard(),
       'POS Counter' => const PosCounterScreen(),
       'Orders' => const OrdersScreen(),
+      'Bill Management' => const BillManagementScreen(),
       'Table Management' => const TableManagementScreen(),
       'Menu Management' => const MenuManagementScreen(),
       'Inventory' => const InventoryRequestsScreen(),
@@ -90,32 +94,44 @@ class AppSidebar extends StatelessWidget {
     };
     if (screen == null) return;
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (_) => screen));
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDrawer = Scaffold.maybeOf(context)?.hasDrawer ?? false;
-    final toggle = onToggle ?? (isDrawer ? () => Navigator.of(context).maybePop() : null);
+    final toggle =
+        onToggle ?? (isDrawer ? () => Navigator.of(context).maybePop() : null);
 
     return Column(
       children: [
         // Logo Section
         Container(
-          padding: EdgeInsets.fromLTRB(collapsed ? 8 : 15, 12, collapsed ? 8 : 8, 16),
+          padding: EdgeInsets.fromLTRB(
+            collapsed ? 8 : 15,
+            12,
+            collapsed ? 8 : 8,
+            16,
+          ),
           child: Column(
             children: [
               if (toggle != null)
                 Align(
                   alignment: Alignment.centerRight,
                   child: Tooltip(
-                    message: isDrawer ? 'Close sidebar' : (collapsed ? 'Open sidebar' : 'Close sidebar'),
+                    message: isDrawer
+                        ? 'Close sidebar'
+                        : (collapsed ? 'Open sidebar' : 'Close sidebar'),
                     child: IconButton(
                       onPressed: toggle,
                       icon: Icon(
                         isDrawer
                             ? Icons.close_rounded
-                            : (collapsed ? Icons.menu_open_rounded : Icons.chevron_left_rounded),
+                            : (collapsed
+                                  ? Icons.menu_open_rounded
+                                  : Icons.chevron_left_rounded),
                         color: Colors.white70,
                       ),
                     ),
@@ -146,18 +162,12 @@ class AppSidebar extends StatelessWidget {
                 ),
                 const Text(
                   'Restaurant Management',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 11),
                 ),
                 const SizedBox(height: 2),
                 const Text(
                   'Good Food • Happy People',
-                  style: TextStyle(
-                    color: Colors.white54,
-                    fontSize: 9,
-                  ),
+                  style: TextStyle(color: Colors.white54, fontSize: 9),
                 ),
               ],
             ],
@@ -191,7 +201,9 @@ class AppSidebar extends StatelessWidget {
                               height: 48,
                               child: Icon(
                                 item['icon'] as IconData,
-                                color: isSelected ? Colors.white : Colors.white60,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.white60,
                                 size: 21,
                               ),
                             ),

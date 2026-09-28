@@ -8,10 +8,11 @@ class ApiConfig {
   static String menu(String restaurantId) =>
       '$baseUrl/menu?restaurant_id=$restaurantId';
   static const String placeOrder = '$baseUrl/orders/place';
-    static String kitchenOrders = '$baseUrl/orders/kitchen?include_served=true';
-  static String updateStatus(int orderId) =>
-      '$baseUrl/orders/$orderId/status';
-  static String bill(String sessionId) =>
-      '$baseUrl/orders/bill/$sessionId';
+  static String kitchenOrders = '$baseUrl/orders/kitchen?include_served=true';
+  static String updateStatus(int orderId) => '$baseUrl/orders/$orderId/status';
+  static String bill(String sessionId) => '$baseUrl/orders/bill/$sessionId';
   static const String cashPayment = '$baseUrl/payments/cash';
+  static const String sessionQrPayment = '$baseUrl/payments/session-qr';
+  static String paymentStatus(String sessionId) =>
+      '$baseUrl/payments/status/$sessionId';
 }

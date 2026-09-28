@@ -77,11 +77,13 @@ class _CartScreenState extends State<CartScreen> {
       body: cart.isEmpty
           ? _emptyCart(context)
           : CustomerPage(
-              child: Column(
-                children: [
-                  // ---- CART ITEMS LIST ----
-                  Expanded(
-                    child: ListView.builder(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // ---- CART ITEMS LIST ----
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.only(top: 8, bottom: 8),
                       itemCount: cart.items.length + 1,
                       itemBuilder: (context, index) {
@@ -244,39 +246,39 @@ class _CartScreenState extends State<CartScreen> {
                         );
                       },
                     ),
-                  ),
 
-                  // ---- BILL SUMMARY + PLACE ORDER ----
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, -3),
-                        ),
-                      ],
-                    ),
-                    child: SafeArea(
-                      child: Column(
-                        children: [
-                          _billRow('Subtotal', cart.subtotal),
-                          _billRow('GST (5%)', cart.gst),
-                          _billRow('Service Charge (5%)', cart.serviceCharge),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 6),
-                            child: Divider(thickness: 1.5),
+                    // ---- BILL SUMMARY + PLACE ORDER ----
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, -3),
                           ),
-                          _billRow('Total', cart.totalAmount, isBold: true),
-                          const SizedBox(height: 12),
-                          _slideToPlace(),
                         ],
                       ),
+                      child: SafeArea(
+                        child: Column(
+                          children: [
+                            _billRow('Subtotal', cart.subtotal),
+                            _billRow('GST (5%)', cart.gst),
+                            _billRow('Service Charge (5%)', cart.serviceCharge),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 6),
+                              child: Divider(thickness: 1.5),
+                            ),
+                            _billRow('Total', cart.totalAmount, isBold: true),
+                            const SizedBox(height: 12),
+                            _slideToPlace(),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );

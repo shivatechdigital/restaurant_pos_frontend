@@ -1,6 +1,8 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/admin_provider.dart';
 import 'menu_management_screen.dart';
 import 'table_management_screen.dart';
@@ -13,11 +15,14 @@ import 'pos_counter_screen.dart';
 import 'coupons_screen.dart';
 import 'customers_screen.dart';
 import 'fulfillment_screen.dart';
+import 'bill_management_screen.dart';
 import '../widgets/app_sidebar.dart';
 import '../widgets/admin_top_bar.dart';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+
 import 'dart:async';
 
 class MainDashboard extends StatefulWidget {
@@ -81,7 +86,8 @@ class _MainDashboardState extends State<MainDashboard> {
                   child: Container(
                     color: const Color(0xFF2D2D2D),
                     child: const SafeArea(
-                        child: AppSidebar(activeLabel: 'Dashboard')),
+                      child: AppSidebar(activeLabel: 'Dashboard'),
+                    ),
                   ),
                 )
               : null,
@@ -95,7 +101,9 @@ class _MainDashboardState extends State<MainDashboard> {
                   children: [
                     AdminTopBar(
                       isMobile: isMobile,
-                      onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                      onMenuPressed: isMobile
+                          ? () => Scaffold.of(context).openDrawer()
+                          : null,
                       title: 'Dashboard',
                     ),
                     // Dashboard Content
@@ -104,13 +112,13 @@ class _MainDashboardState extends State<MainDashboard> {
                         builder: (context, admin, _) {
                           if (admin.isLoading && admin.dashboard == null) {
                             return const Center(
-                                child: CircularProgressIndicator());
+                              child: CircularProgressIndicator(),
+                            );
                           }
                           return RefreshIndicator(
                             onRefresh: _loadAll,
                             child: SingleChildScrollView(
-                              physics:
-                                  const AlwaysScrollableScrollPhysics(),
+                              physics: const AlwaysScrollableScrollPhysics(),
                               padding: EdgeInsets.all(isMobile ? 12 : 20),
                               child: Column(
                                 children: [
@@ -294,10 +302,7 @@ class _MainDashboardState extends State<MainDashboard> {
                     ),
                     Text(
                       'Restaurant Owner',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 11,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                   ],
                 ),
@@ -334,10 +339,7 @@ class _MainDashboardState extends State<MainDashboard> {
         const SizedBox(height: 5),
         const Text(
           'Good food. Better business. Let\'s make today amazing!',
-          style: TextStyle(
-            color: Colors.white70,
-            fontSize: 13,
-          ),
+          style: TextStyle(color: Colors.white70, fontSize: 13),
         ),
         Text(
           '"Serving Happiness Everyday"',
@@ -362,15 +364,13 @@ class _MainDashboardState extends State<MainDashboard> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment:
-            isMobile ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment: isMobile
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         children: [
           Text(
             currentDate,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
           ),
           Text(
             currentTime,
@@ -526,10 +526,7 @@ class _MainDashboardState extends State<MainDashboard> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -641,14 +638,15 @@ class _MainDashboardState extends State<MainDashboard> {
             children: [
               const Text(
                 'Table Status',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               GestureDetector(
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const TableManagementScreen())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TableManagementScreen(),
+                  ),
+                ),
                 child: Text(
                   'View All',
                   style: TextStyle(
@@ -665,24 +663,41 @@ class _MainDashboardState extends State<MainDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildTableStatusItem('$occupied', 'Occupied', const Color(0xFF4CAF50)),
+              _buildTableStatusItem(
+                '$occupied',
+                'Occupied',
+                const Color(0xFF4CAF50),
+              ),
               _buildTableStatusItem('$available', 'Available', Colors.grey),
-              _buildTableStatusItem('$reserved', 'Reserved', const Color(0xFFE67E22)),
-              _buildTableStatusItem('$cleaning', 'Cleaning', Colors.grey.shade400),
+              _buildTableStatusItem(
+                '$reserved',
+                'Reserved',
+                const Color(0xFFE67E22),
+              ),
+              _buildTableStatusItem(
+                '$cleaning',
+                'Cleaning',
+                Colors.grey.shade400,
+              ),
             ],
           ),
           const SizedBox(height: 20),
           if (tables.isEmpty)
-            const Text('No tables configured yet',
-                style: TextStyle(color: Colors.black54, fontSize: 12))
+            const Text(
+              'No tables configured yet',
+              style: TextStyle(color: Colors.black54, fontSize: 12),
+            )
           else
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: tables.map((t) {
                 final status = t['status']?.toString() ?? 'available';
-                return _buildTableChip('${t['table_number']}', chipColor(status),
-                    isLight: status == 'available');
+                return _buildTableChip(
+                  '${t['table_number']}',
+                  chipColor(status),
+                  isLight: status == 'available',
+                );
               }).toList(),
             ),
         ],
@@ -703,10 +718,7 @@ class _MainDashboardState extends State<MainDashboard> {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
         ),
       ],
     );
@@ -768,10 +780,7 @@ class _MainDashboardState extends State<MainDashboard> {
         children: [
           const Text(
             "Today's Sales",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
           // Chart
@@ -779,108 +788,110 @@ class _MainDashboardState extends State<MainDashboard> {
             height: 200,
             child: spots.isEmpty
                 ? Center(
-                    child: Text('No sales recorded yet today',
-                        style: TextStyle(color: Colors.grey.shade500)),
+                    child: Text(
+                      'No sales recorded yet today',
+                      style: TextStyle(color: Colors.grey.shade500),
+                    ),
                   )
                 : LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: Colors.grey.shade200,
-                      strokeWidth: 1,
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      getTitlesWidget: (value, meta) => Text(
-                        value >= 1000
-                            ? '${(value / 1000).toStringAsFixed(0)}K'
-                            : value.toStringAsFixed(0),
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 10,
-                        ),
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (value) {
+                          return FlLine(
+                            color: Colors.grey.shade200,
+                            strokeWidth: 1,
+                          );
+                        },
                       ),
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 2,
-                      getTitlesWidget: (value, meta) {
-                        final hour = value.toInt();
-                        final label = hour == 0
-                            ? '12AM'
-                            : hour < 12
-                                ? '${hour}AM'
-                                : hour == 12
-                                    ? '12PM'
-                                    : '${hour - 12}PM';
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            label,
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 10,
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) => Text(
+                              value >= 1000
+                                  ? '${(value / 1000).toStringAsFixed(0)}K'
+                                  : value.toStringAsFixed(0),
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 10,
+                              ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 23,
-                minY: 0,
-                maxY: maxRevenue * 1.2,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: const Color(0xFFE67E22),
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: 4,
-                          color: Colors.white,
-                          strokeWidth: 2,
-                          strokeColor: const Color(0xFFE67E22),
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          const Color(0xFFE67E22).withOpacity(0.3),
-                          const Color(0xFFE67E22).withOpacity(0.05),
-                        ],
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: 2,
+                            getTitlesWidget: (value, meta) {
+                              final hour = value.toInt();
+                              final label = hour == 0
+                                  ? '12AM'
+                                  : hour < 12
+                                  ? '${hour}AM'
+                                  : hour == 12
+                                  ? '12PM'
+                                  : '${hour - 12}PM';
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
                       ),
+                      borderData: FlBorderData(show: false),
+                      minX: 0,
+                      maxX: 23,
+                      minY: 0,
+                      maxY: maxRevenue * 1.2,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: spots,
+                          isCurved: true,
+                          color: const Color(0xFFE67E22),
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) {
+                              return FlDotCirclePainter(
+                                radius: 4,
+                                color: Colors.white,
+                                strokeWidth: 2,
+                                strokeColor: const Color(0xFFE67E22),
+                              );
+                            },
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                const Color(0xFFE67E22).withOpacity(0.3),
+                                const Color(0xFFE67E22).withOpacity(0.05),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
           ),
           const SizedBox(height: 15),
           // Bottom stats
@@ -913,7 +924,11 @@ class _MainDashboardState extends State<MainDashboard> {
   }
 
   Widget _buildSalesBottomStat(
-      IconData icon, Color color, String value, String label) {
+    IconData icon,
+    Color color,
+    String value,
+    String label,
+  ) {
     return Row(
       children: [
         Container(
@@ -930,17 +945,11 @@ class _MainDashboardState extends State<MainDashboard> {
           children: [
             Text(
               value,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             Text(
               label,
-              style: TextStyle(
-                color: Colors.grey.shade500,
-                fontSize: 10,
-              ),
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 10),
             ),
           ],
         ),
@@ -959,8 +968,8 @@ class _MainDashboardState extends State<MainDashboard> {
     final maxSold = topItems.isEmpty
         ? 1
         : topItems
-            .map((d) => _asDouble(d['total_sold'] ?? d['quantity']))
-            .reduce((a, b) => a > b ? a : b);
+              .map((d) => _asDouble(d['total_sold'] ?? d['quantity']))
+              .reduce((a, b) => a > b ? a : b);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -983,14 +992,13 @@ class _MainDashboardState extends State<MainDashboard> {
             children: [
               const Text(
                 'Popular Dishes',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               GestureDetector(
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const ReportsScreen())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReportsScreen()),
+                ),
                 child: Text(
                   'View All',
                   style: TextStyle(
@@ -1006,8 +1014,10 @@ class _MainDashboardState extends State<MainDashboard> {
           if (topItems.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('No sales data yet',
-                  style: TextStyle(color: Colors.black54, fontSize: 12)),
+              child: Text(
+                'No sales data yet',
+                style: TextStyle(color: Colors.black54, fontSize: 12),
+              ),
             )
           else
             ...List.generate(topItems.length.clamp(0, 5), (index) {
@@ -1038,11 +1048,7 @@ class _MainDashboardState extends State<MainDashboard> {
                         color: color.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Icon(
-                        Icons.restaurant,
-                        color: color,
-                        size: 20,
-                      ),
+                      child: Icon(Icons.restaurant, color: color, size: 20),
                     ),
                     const SizedBox(width: 10),
                     // Dish details
@@ -1051,7 +1057,8 @@ class _MainDashboardState extends State<MainDashboard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            (dish['name'] ?? dish['item_name'] ?? '').toString(),
+                            (dish['name'] ?? dish['item_name'] ?? '')
+                                .toString(),
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 12,
@@ -1169,8 +1176,10 @@ class _MainDashboardState extends State<MainDashboard> {
         if (recent.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 14),
-            child: Text('No orders placed yet',
-                style: TextStyle(color: Colors.black54, fontSize: 12)),
+            child: Text(
+              'No orders placed yet',
+              style: TextStyle(color: Colors.black54, fontSize: 12),
+            ),
           )
         else
           ...recent.map((order) {
@@ -1178,9 +1187,7 @@ class _MainDashboardState extends State<MainDashboard> {
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade100),
-                ),
+                border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
               ),
               child: Row(
                 children: [
@@ -1280,14 +1287,13 @@ class _MainDashboardState extends State<MainDashboard> {
             children: [
               const Text(
                 'Recent Orders',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               GestureDetector(
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const OrdersScreen())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                ),
                 child: Text(
                   'View All',
                   style: TextStyle(
@@ -1377,17 +1383,17 @@ class _MainDashboardState extends State<MainDashboard> {
         if (lowStock.isEmpty)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 14),
-            child: Text('All materials sufficiently stocked',
-                style: TextStyle(color: Colors.black54, fontSize: 12)),
+            child: Text(
+              'All materials sufficiently stocked',
+              style: TextStyle(color: Colors.black54, fontSize: 12),
+            ),
           )
         else
           ...lowStock.map((item) {
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade100),
-                ),
+                border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
               ),
               child: Row(
                 children: [
@@ -1450,14 +1456,15 @@ class _MainDashboardState extends State<MainDashboard> {
             children: [
               const Text(
                 'Low Inventory Alerts',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               GestureDetector(
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const InventoryRequestsScreen())),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const InventoryRequestsScreen(),
+                  ),
+                ),
                 child: Text(
                   'View All',
                   style: TextStyle(
@@ -1500,10 +1507,7 @@ class _MainDashboardState extends State<MainDashboard> {
         children: [
           const Text(
             'Quick Actions',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 15),
           // Action buttons grid
@@ -1511,8 +1515,10 @@ class _MainDashboardState extends State<MainDashboard> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const PosCounterScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PosCounterScreen()),
+                  ),
                   child: _buildActionButton(
                     Icons.add_shopping_cart,
                     'New Order',
@@ -1523,8 +1529,12 @@ class _MainDashboardState extends State<MainDashboard> {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const MenuManagementScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MenuManagementScreen(),
+                    ),
+                  ),
                   child: _buildActionButton(
                     Icons.restaurant_menu,
                     'Manage Menu',
@@ -1535,8 +1545,10 @@ class _MainDashboardState extends State<MainDashboard> {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const CustomersScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CustomersScreen()),
+                  ),
                   child: _buildActionButton(
                     Icons.person_add,
                     'Add Customer',
@@ -1551,8 +1563,10 @@ class _MainDashboardState extends State<MainDashboard> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const ReportsScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ReportsScreen()),
+                  ),
                   child: _buildActionButton(
                     Icons.bar_chart,
                     'View Reports',
@@ -1563,8 +1577,12 @@ class _MainDashboardState extends State<MainDashboard> {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const InventoryRequestsScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const InventoryRequestsScreen(),
+                    ),
+                  ),
                   child: _buildActionButton(
                     Icons.inventory,
                     'Manage Inventory',
@@ -1575,8 +1593,10 @@ class _MainDashboardState extends State<MainDashboard> {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const StaffScreen())),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const StaffScreen()),
+                  ),
                   child: _buildActionButton(
                     Icons.people,
                     'Staff Management',
@@ -1585,6 +1605,26 @@ class _MainDashboardState extends State<MainDashboard> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: 220,
+              child: GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BillManagementScreen(),
+                  ),
+                ),
+                child: _buildActionButton(
+                  Icons.payments,
+                  'Bill Management',
+                  const Color(0xFF2E7D32),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 20),
           // Bottom motivational message
@@ -1619,11 +1659,7 @@ class _MainDashboardState extends State<MainDashboard> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.favorite,
-                  color: Colors.pink.shade300,
-                  size: 20,
-                ),
+                Icon(Icons.favorite, color: Colors.pink.shade300, size: 20),
               ],
             ),
           ),
@@ -1658,6 +1694,7 @@ class _MainDashboardState extends State<MainDashboard> {
     );
   }
 
-  double _asDouble(dynamic value) =>
-      value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '') ?? 0;
+  double _asDouble(dynamic value) => value is num
+      ? value.toDouble()
+      : double.tryParse(value?.toString() ?? '') ?? 0;
 }

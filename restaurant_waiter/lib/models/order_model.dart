@@ -1,5 +1,6 @@
-double _parseAmount(dynamic value) =>
-    value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '') ?? 0;
+double _parseAmount(dynamic value) => value is num
+    ? value.toDouble()
+    : double.tryParse(value?.toString() ?? '') ?? 0;
 
 int _parseInt(dynamic value, {int fallback = 0}) {
   if (value == null) return fallback;
@@ -40,17 +41,22 @@ class WaiterOrder {
   factory WaiterOrder.fromJson(Map<String, dynamic> json) {
     return WaiterOrder(
       orderId: _parseInt(json['id']),
-      sessionId: _parseInt(json['session_id'], fallback: 0) == 0 ? null : _parseInt(json['session_id']),
+      sessionId: _parseInt(json['session_id'], fallback: 0) == 0
+          ? null
+          : _parseInt(json['session_id']),
       tableId: _parseInt(json['table_id'], fallback: 0),
       tableNumber: json['table_number']?.toString() ?? 'T?',
       status: json['status']?.toString() ?? 'placed',
       customerName: json['ordered_by_name']?.toString(),
       customerPhone: json['ordered_by_phone']?.toString(),
-      totalAmount: json['final_amount'] != null ? _parseAmount(json['final_amount']) : 0,
+      totalAmount: json['final_amount'] != null
+          ? _parseAmount(json['final_amount'])
+          : 0,
       placedAt: DateTime.tryParse(json['placed_at'] ?? '') ?? DateTime.now(),
       minutesAgo: _parseInt(json['minutes_ago'], fallback: 0),
       notes: json['notes']?.toString(),
-      items: (json['items'] as List?)
+      items:
+          (json['items'] as List?)
               ?.map((i) => WaiterOrderItem.fromJson(i as Map<String, dynamic>))
               .toList() ??
           [],
@@ -93,6 +99,8 @@ class WaiterOrderItem {
 
 class BillData {
   final String tableNumber;
+  final String restaurantName;
+  final List<BillOrderGroup> orders;
   final List<BillItem> items;
   final double subtotal;
   final double cgst;
@@ -104,6 +112,8 @@ class BillData {
 
   BillData({
     required this.tableNumber,
+    required this.restaurantName,
+    required this.orders,
     required this.items,
     required this.subtotal,
     required this.cgst,
@@ -118,9 +128,14 @@ class BillData {
     final summary = json['summary'] as Map<String, dynamic>;
     return BillData(
       tableNumber: json['table_number'] ?? '',
-      items: (json['items'] as List?)
-              ?.map((i) => BillItem.fromJson(i))
-              .toList() ??
+      restaurantName: json['restaurant_name']?.toString() ?? '',
+      orders: (json['orders'] as List? ?? const [])
+          .map(
+            (order) => BillOrderGroup.fromJson(order as Map<String, dynamic>),
+          )
+          .toList(),
+      items:
+          (json['items'] as List?)?.map((i) => BillItem.fromJson(i)).toList() ??
           [],
       subtotal: _parseAmount(summary['subtotal']),
       cgst: _parseAmount(summary['cgst']),
@@ -128,9 +143,34 @@ class BillData {
       serviceCharge: _parseAmount(summary['service_charge']),
       finalAmount: _parseAmount(summary['final_amount']),
       paidAmount: _parseAmount(summary['paid_amount'] ?? 0),
-      outstandingAmount: _parseAmount(summary['outstanding_amount'] ?? summary['final_amount']),
+      outstandingAmount: _parseAmount(
+        summary['outstanding_amount'] ?? summary['final_amount'],
+      ),
     );
   }
+}
+
+class BillOrderGroup {
+  final int orderId;
+  final String customerName;
+  final String customerPhone;
+  final List<BillItem> items;
+
+  BillOrderGroup({
+    required this.orderId,
+    required this.customerName,
+    required this.customerPhone,
+    required this.items,
+  });
+
+  factory BillOrderGroup.fromJson(Map<String, dynamic> json) => BillOrderGroup(
+    orderId: _parseInt(json['order_id']),
+    customerName: json['customer_name']?.toString() ?? 'Customer',
+    customerPhone: json['customer_phone']?.toString() ?? '',
+    items: (json['items'] as List? ?? const [])
+        .map((item) => BillItem.fromJson(item as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 class BillItem {

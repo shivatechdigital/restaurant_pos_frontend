@@ -7,6 +7,7 @@ class TableModel {
   final String? roomCode;
   final DateTime? occupiedAt;
   final int? activeSessionId;
+  final double runningAmount;
 
   TableModel({
     required this.id,
@@ -17,6 +18,7 @@ class TableModel {
     this.roomCode,
     this.occupiedAt,
     this.activeSessionId,
+    this.runningAmount = 0,
   });
 
   factory TableModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,9 @@ class TableModel {
       activeSessionId: json['active_session_id'] is int
           ? json['active_session_id'] as int
           : int.tryParse(json['active_session_id']?.toString() ?? ''),
+      runningAmount: json['running_amount'] is num
+          ? (json['running_amount'] as num).toDouble()
+          : double.tryParse(json['running_amount']?.toString() ?? '') ?? 0,
     );
   }
 

@@ -245,4 +245,21 @@ class ApiService {
     );
     return _decode(res);
   }
+
+  Future<Map<String, dynamic>> createSessionQr(String sessionId) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.sessionQrPayment),
+      headers: await _headers(),
+      body: jsonEncode({'session_id': int.parse(sessionId)}),
+    );
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getPaymentStatus(String sessionId) async {
+    final res = await http.get(
+      Uri.parse(ApiConfig.paymentStatus(sessionId)),
+      headers: await _headers(),
+    );
+    return _decode(res);
+  }
 }

@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+
 import '../models/table_model.dart';
 import '../models/order_model.dart';
 import '../services/api_service.dart';
@@ -130,13 +132,15 @@ class WaiterProvider extends ChangeNotifier {
             notes: old.notes,
             items: newStatus == 'served'
                 ? old.items
-                    .map((item) => WaiterOrderItem(
+                      .map(
+                        (item) => WaiterOrderItem(
                           name: item.name,
                           quantity: item.quantity,
                           totalPrice: item.totalPrice,
                           status: 'served',
-                        ))
-                    .toList()
+                        ),
+                      )
+                      .toList()
                 : old.items,
           );
           notifyListeners();
@@ -149,7 +153,10 @@ class WaiterProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> cancelOrderManually(int orderId, String reason) async {
+  Future<Map<String, dynamic>> cancelOrderManually(
+    int orderId,
+    String reason,
+  ) async {
     try {
       final result = await _api.cancelOrderManually(orderId, reason);
       if (result['success'] == true) {
@@ -175,7 +182,11 @@ class WaiterProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<bool> processCashPayment(String sessionId, double amount, {String method = 'cash'}) async {
+  Future<bool> processCashPayment(
+    String sessionId,
+    double amount, {
+    String method = 'cash',
+  }) async {
     try {
       final result = await _api.cashPayment(sessionId, amount, method: method);
       if (result['success'] == true) {
@@ -190,7 +201,16 @@ class WaiterProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> transferTable(int sessionId, int targetTableId) async {
+  Future<Map<String, dynamic>> createSessionQr(String sessionId) =>
+      _api.createSessionQr(sessionId);
+
+  Future<Map<String, dynamic>> getPaymentStatus(String sessionId) =>
+      _api.getPaymentStatus(sessionId);
+
+  Future<Map<String, dynamic>> transferTable(
+    int sessionId,
+    int targetTableId,
+  ) async {
     try {
       final result = await _api.transferTable(sessionId, targetTableId);
       if (result['success'] == true) {
@@ -203,7 +223,10 @@ class WaiterProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> mergeTables(int sourceSessionId, int targetSessionId) async {
+  Future<Map<String, dynamic>> mergeTables(
+    int sourceSessionId,
+    int targetSessionId,
+  ) async {
     try {
       final result = await _api.mergeTables(sourceSessionId, targetSessionId);
       if (result['success'] == true) {

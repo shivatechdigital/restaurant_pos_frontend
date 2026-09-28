@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/order_model.dart';
 import '../models/table_model.dart';
 import '../providers/waiter_provider.dart';
@@ -52,14 +53,24 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
     final compact = width < 1100;
 
     final all = waiter.activeOrders
-        .where((order) =>
-            _query.isEmpty ||
-            order.tableNumber.toLowerCase().contains(_query) ||
-            '#${order.orderId}'.contains(_query))
+        .where(
+          (order) =>
+              _query.isEmpty ||
+              order.tableNumber.toLowerCase().contains(_query) ||
+              '#${order.orderId}'.contains(_query),
+        )
         .toList();
     final active = all.where((o) => o.isActive).toList();
     final served = all.where((o) => o.isServed).toList();
-    final pendingBill = all.where((o) => _isPendingBill(o, waiter.tables)).toList();
+    final pendingBill = all
+        .where((o) => _isPendingBill(o, waiter.tables))
+        .toList();
+    final pendingTables = waiter.tables
+        .where(
+          (table) =>
+              table.activeSessionId != null && table.runningAmount > 0.01,
+        )
+        .toList();
 
     final visible = switch (_tab) {
       _OrdersTab.active => active,
@@ -77,7 +88,8 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
       title: 'Hello, Rahul! 👋',
       subtitle: 'Great service creates great memories!',
       searchHint: 'Search by table or order id...',
-      onSearchChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+      onSearchChanged: (value) =>
+          setState(() => _query = value.trim().toLowerCase()),
       onRefresh: () {
         waiter.loadTables();
         waiter.loadActiveOrders();
@@ -85,62 +97,77 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
       body: waiter.isOrdersLoading && waiter.activeOrders.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : waiter.error.isNotEmpty && waiter.activeOrders.isEmpty
-              ? _errorState(waiter)
-              : Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      WaiterPageHeader(
-                        icon: Icons.receipt_long_rounded,
-                        iconColor: kRed,
-                        title: 'My Orders',
-                        subtitle: 'Manage your table orders, track status and serve with smile!',
-                        pills: [
-                          WaiterStatPill(
-                            icon: Icons.groups_2_rounded,
-                            value: '${active.length}',
-                            label: 'My Active Orders',
-                            color: Colors.green,
-                          ),
-                          WaiterStatPill(
-                            icon: Icons.check_circle_rounded,
-                            value: '${served.length}',
-                            label: 'Completed Today',
-                            color: Colors.blue,
-                          ),
-                          WaiterStatPill(
-                            icon: Icons.hourglass_bottom_rounded,
-                            value: _avgWaitMinutes(active),
-                            label: 'Avg Wait Time',
-                            color: Colors.orange,
-                          ),
-                          WaiterStatPill(
-                            icon: Icons.receipt_rounded,
-                            value: '${pendingBill.length}',
-                            label: 'Pending Bill',
-                            color: kRed,
-                          ),
-                        ],
+          ? _errorState(waiter)
+          : Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  WaiterPageHeader(
+                    icon: Icons.receipt_long_rounded,
+                    iconColor: kRed,
+                    title: 'My Orders',
+                    subtitle: 'Manage your table orders, track status and serve with smile!',
+                    pills: [
+                      WaiterStatPill(
+                        icon: Icons.groups_2_rounded,
+                        value: '${active.length}',
+                        label: 'My Active Orders',
+                        color: Colors.green,
                       ),
-                      const SizedBox(height: 14),
-                      _tabsRow(active.length, served.length, pendingBill.length, all.length),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: compact
-                            ? _list(visible, waiter.tables, fullWidth: true)
-                            : Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(flex: 2, child: _list(visible, waiter.tables, fullWidth: false)),
-                                  const SizedBox(width: 12),
-                                  SizedBox(width: 300, child: _detailPanel(_selected, waiter)),
-                                ],
-                              ),
+                      WaiterStatPill(
+                        icon: Icons.check_circle_rounded,
+                        value: '${served.length}',
+                        label: 'Completed Today',
+                        color: Colors.blue,
+                      ),
+                      WaiterStatPill(
+                        icon: Icons.hourglass_bottom_rounded,
+                        value: _avgWaitMinutes(active),
+                        label: 'Avg Wait Time',
+                        color: Colors.orange,
+                      ),
+                      WaiterStatPill(
+                        icon: Icons.receipt_rounded,
+                        value: '${pendingTables.length}',
+                        label: 'Pending Bill',
+                        color: kRed,
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 14),
+                  _tabsRow(
+                    active.length,
+                    served.length,
+                    pendingTables.length,
+                    all.length,
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: compact
+                        ? _list(visible, waiter.tables, fullWidth: true)
+                        : Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: _list(
+                                  visible,
+                                  waiter.tables,
+                                  fullWidth: false,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                width: 300,
+                                child: _detailPanel(_selected, waiter),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -192,7 +219,10 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
   Widget _tabChip(String label, _OrdersTab tab) {
     final selected = _tab == tab;
     return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 11.5, color: selected ? Colors.white : kInk)),
+      label: Text(
+        label,
+        style: TextStyle(fontSize: 11.5, color: selected ? Colors.white : kInk),
+      ),
       selected: selected,
       selectedColor: kRed,
       backgroundColor: Colors.white,
@@ -201,7 +231,12 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
     );
   }
 
-  Widget _list(List<WaiterOrder> orders, List<TableModel> tables, {required bool fullWidth}) {
+  Widget _list(
+    List<WaiterOrder> orders,
+    List<TableModel> tables, {
+    required bool fullWidth,
+  }) {
+    if (_tab == _OrdersTab.pendingBill) return _pendingBills(tables);
     if (orders.isEmpty) {
       return Center(
         child: Column(
@@ -210,7 +245,10 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
           children: [
             Icon(Icons.receipt_long, size: 56, color: Colors.grey[300]),
             const SizedBox(height: 10),
-            const Text('Koi order nahi hai is tab mein', style: TextStyle(color: Colors.grey)),
+            const Text(
+              'Koi order nahi hai is tab mein',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       );
@@ -220,9 +258,84 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.only(bottom: 12),
         itemCount: orders.length,
-        itemBuilder: (context, index) => _orderRow(orders[index], tables, fullWidth),
+        itemBuilder: (context, index) =>
+            _orderRow(orders[index], tables, fullWidth),
       ),
     );
+  }
+
+  Widget _pendingBills(List<TableModel> tables) {
+    final pendingTables = tables
+        .where(
+          (table) =>
+              table.activeSessionId != null && table.runningAmount > 0.01,
+        )
+        .toList();
+    if (pendingTables.isEmpty) {
+      return const Center(child: Text('No tables have an outstanding bill'));
+    }
+    return RefreshIndicator(
+      onRefresh: () async {
+        final waiter = context.read<WaiterProvider>();
+        await waiter.loadTables();
+        await waiter.loadActiveOrders();
+      },
+      child: ListView.separated(
+        padding: const EdgeInsets.only(bottom: 12),
+        itemCount: pendingTables.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final table = pendingTables[index];
+          return Card(
+            child: ListTile(
+              leading: _tableBadge(table.tableNumber),
+              title: Text(
+                'Table ${table.tableNumber}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: const Text(
+                'Combined bill for all customers at this table',
+              ),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₹${table.runningAmount.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: kRed,
+                    ),
+                  ),
+                  const Text('View bill', style: TextStyle(fontSize: 11)),
+                ],
+              ),
+              onTap: () => _openTableBill(table),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _openTableBill(TableModel table) {
+    final sessionId = table.activeSessionId;
+    if (sessionId == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BillScreen(
+          tableNumber: table.tableNumber,
+          tableId: table.id,
+          sessionId: sessionId,
+        ),
+      ),
+    ).then((_) {
+      if (!mounted) return;
+      final waiter = context.read<WaiterProvider>();
+      waiter.loadTables();
+      waiter.loadActiveOrders();
+    });
   }
 
   Widget _orderRow(WaiterOrder order, List<TableModel> tables, bool fullWidth) {
@@ -233,7 +346,9 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
       color: selected ? kRed.withValues(alpha: .04) : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: selected ? kRed.withValues(alpha: .4) : Colors.grey.shade200),
+        side: BorderSide(
+          color: selected ? kRed.withValues(alpha: .4) : Colors.grey.shade200,
+        ),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
@@ -254,7 +369,13 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
                       runSpacing: 4,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text('#${order.orderId}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          '#${order.orderId}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                         _statusBadge(order.status, pendingBill: pendingBill),
                         Text(
                           '${order.minutesAgo}m ago',
@@ -269,7 +390,10 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
                     Text(
                       order.items.isEmpty
                           ? 'No items'
-                          : order.items.take(3).map((i) => '${i.name} x${i.quantity}').join(', '),
+                          : order.items
+                                .take(3)
+                                .map((i) => '${i.name} x${i.quantity}')
+                                .join(', '),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: Colors.grey[600], fontSize: 12.5),
@@ -279,16 +403,25 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
                       children: [
                         Text(
                           '₹${order.totalAmount.toStringAsFixed(0)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: kInk),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: kInk,
+                          ),
                         ),
                         const Spacer(),
                         if (order.status == 'ready')
-                          _smallButton('Mark as Served', Colors.green, () => _markServed(order)),
-                        if (pendingBill)
-                          _smallButton('Request Bill', Colors.orange, () => _requestBill(order)),
+                          _smallButton(
+                            'Mark as Served',
+                            Colors.green,
+                            () => _markServed(order),
+                          ),
                         TextButton(
                           onPressed: () => _openDetail(order, fullWidth),
-                          child: const Text('View', style: TextStyle(fontSize: 12)),
+                          child: const Text(
+                            'View',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ],
                     ),
@@ -326,16 +459,30 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
   }
 
   Widget _tableBadge(String tableNumber) {
-    const palette = [kRed, Colors.orange, Colors.blue, Colors.purple, Colors.teal, Colors.pink];
+    const palette = [
+      kRed,
+      Colors.orange,
+      Colors.blue,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+    ];
     final color = palette[tableNumber.hashCode.abs() % palette.length];
     return Container(
       width: 46,
       height: 46,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Text(
         tableNumber,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
       ),
     );
   }
@@ -378,7 +525,14 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
       borderRadius: BorderRadius.circular(5),
       border: Border.all(color: color.withValues(alpha: .3)),
     ),
-    child: Text(label, style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w700)),
+    child: Text(
+      label,
+      style: TextStyle(
+        color: color,
+        fontSize: 10.5,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
   );
 
   Widget _detailPanel(WaiterOrder? order, WaiterProvider waiter) {
@@ -395,7 +549,10 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
           children: [
             Icon(Icons.touch_app, color: Colors.blueGrey, size: 32),
             SizedBox(height: 8),
-            Text('Select an order', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Select an order',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 3),
             Text(
               'Tap View on any order to see its details here.',
@@ -412,7 +569,10 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: SingleChildScrollView(padding: const EdgeInsets.all(14), child: _detailContent(order, waiter)),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(14),
+        child: _detailContent(order, waiter),
+      ),
     );
   }
 
@@ -424,24 +584,56 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
         Row(
           children: [
             Expanded(
-              child: Text('Table ${order.tableNumber}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+              child: Text(
+                'Table ${order.tableNumber}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
             _statusBadge(order.status, pendingBill: pendingBill),
           ],
         ),
-        Text('#${order.orderId} \u2022 ${order.minutesAgo}m ago', style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 11)),
+        Text(
+          '#${order.orderId} \u2022 ${order.minutesAgo}m ago',
+          style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 11),
+        ),
         const Divider(height: 20),
-        Text('Order Items (${order.items.length})', style: const TextStyle(fontWeight: FontWeight.w900)),
+        Text(
+          'Order Items (${order.items.length})',
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
         const SizedBox(height: 8),
         ...order.items.map(
           (item) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
-                Expanded(child: Text(item.name, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600))),
-                Text('x${item.quantity}', style: TextStyle(color: Colors.blueGrey.shade500, fontSize: 11)),
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  'x${item.quantity}',
+                  style: TextStyle(
+                    color: Colors.blueGrey.shade500,
+                    fontSize: 11,
+                  ),
+                ),
                 const SizedBox(width: 10),
-                Text('₹${item.totalPrice.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                Text(
+                  '₹${item.totalPrice.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -451,7 +643,10 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text('Total', style: TextStyle(fontWeight: FontWeight.bold)),
-            Text('₹${order.totalAmount.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.w900, color: kRed)),
+            Text(
+              '₹${order.totalAmount.toStringAsFixed(0)}',
+              style: const TextStyle(fontWeight: FontWeight.w900, color: kRed),
+            ),
           ],
         ),
         const SizedBox(height: 14),
@@ -462,20 +657,12 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
               onPressed: order.isServed ? null : () => _markServed(order),
               icon: const Icon(Icons.check, size: 16),
               label: const Text('Mark as Served'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
             ),
           ),
-        if (order.isServed) ...[
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: order.sessionId == null ? null : () => _requestBill(order),
-              icon: const Icon(Icons.receipt, size: 16),
-              label: const Text('Request Bill'),
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -483,32 +670,19 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
   Future<void> _markServed(WaiterOrder order) async {
     if (!await confirmServeIfNeeded(context, 'Order #${order.orderId}')) return;
     if (!mounted) return;
-    final ok = await context.read<WaiterProvider>().updateOrderStatus(order.orderId, 'served');
+    final ok = await context.read<WaiterProvider>().updateOrderStatus(
+      order.orderId,
+      'served',
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? '✅ ${order.tableNumber} order served!' : 'Unable to update order.'),
-        backgroundColor: ok ? Colors.green : Colors.red,
-      ),
-    );
-  }
-
-  void _requestBill(WaiterOrder order) {
-    final sessionId = order.sessionId;
-    if (sessionId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Session ID nahi mila'), backgroundColor: Colors.red),
-      );
-      return;
-    }
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BillScreen(
-          tableNumber: order.tableNumber,
-          tableId: order.tableId,
-          sessionId: sessionId,
+        content: Text(
+          ok
+              ? '✅ ${order.tableNumber} order served!'
+              : 'Unable to update order.',
         ),
+        backgroundColor: ok ? Colors.green : Colors.red,
       ),
     );
   }

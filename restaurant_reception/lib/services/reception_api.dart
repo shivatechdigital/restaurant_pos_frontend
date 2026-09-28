@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../constants/app_theme.dart';
 
 class ReceptionApi {
@@ -7,9 +9,9 @@ class ReceptionApi {
   ReceptionApi(this.token);
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
   Future<Map<String, dynamic>> _get(String path) async {
     try {
@@ -23,11 +25,17 @@ class ReceptionApi {
     }
   }
 
-  Future<Map<String, dynamic>> _post(String path, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> _post(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final res = await http
-          .post(Uri.parse('${AppTheme.apiBaseUrl}$path'),
-              headers: _headers, body: jsonEncode(body))
+          .post(
+            Uri.parse('${AppTheme.apiBaseUrl}$path'),
+            headers: _headers,
+            body: jsonEncode(body),
+          )
           .timeout(const Duration(seconds: 15));
       if (res.body.isEmpty) return {'success': false};
       return jsonDecode(res.body);
@@ -54,19 +62,44 @@ class ReceptionApi {
     return _post('/pos/orders', body);
   }
 
-  Future<Map<String, dynamic>> cashPayment(dynamic sessionId, double amount) async {
-    return _post('/payments/cash', {'session_id': sessionId, 'amount': amount});
+  Future<Map<String, dynamic>> cashPayment(
+    dynamic sessionId,
+    double amount, {
+    String method = 'cash',
+  }) async {
+    return _post('/payments/cash', {
+      'session_id': sessionId,
+      'amount': amount,
+      'payment_method': method,
+    });
   }
 
-  Future<Map<String, dynamic>> toggleItemAvailability(int itemId, bool available) async {
+  Future<Map<String, dynamic>> createSessionQr(dynamic sessionId) async {
+    return _post('/payments/session-qr', {'session_id': sessionId});
+  }
+
+  Future<Map<String, dynamic>> getPaymentStatus(dynamic sessionId) async {
+    return _get('/payments/status/$sessionId');
+  }
+
+  Future<Map<String, dynamic>> toggleItemAvailability(
+    int itemId,
+    bool available,
+  ) async {
     return _post('/menu/items/$itemId/toggle', {'is_available': available});
   }
 
-  Future<Map<String, dynamic>> updateMenuItem(int itemId, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> updateMenuItem(
+    int itemId,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final res = await http
-          .put(Uri.parse('${AppTheme.apiBaseUrl}/menu/items/$itemId'),
-              headers: _headers, body: jsonEncode(body))
+          .put(
+            Uri.parse('${AppTheme.apiBaseUrl}/menu/items/$itemId'),
+            headers: _headers,
+            body: jsonEncode(body),
+          )
           .timeout(const Duration(seconds: 15));
       if (res.body.isEmpty) return {'success': false};
       return jsonDecode(res.body);
@@ -75,7 +108,11 @@ class ReceptionApi {
     }
   }
 
-  Future<Map<String, dynamic>> getRevenue({String period = 'daily', String? startDate, String? endDate}) async {
+  Future<Map<String, dynamic>> getRevenue({
+    String period = 'daily',
+    String? startDate,
+    String? endDate,
+  }) async {
     final query = StringBuffer('?period=$period');
     if (startDate != null && endDate != null) {
       query.write('&start_date=$startDate&end_date=$endDate');
@@ -100,9 +137,16 @@ class ReceptionApi {
     try {
       final query = date != null ? '?date=$date' : '';
       final res = await http
-          .get(Uri.parse('${AppTheme.apiBaseUrl}/reports/daily-closing/export$query'), headers: _headers)
+          .get(
+            Uri.parse(
+              '${AppTheme.apiBaseUrl}/reports/daily-closing/export$query',
+            ),
+            headers: _headers,
+          )
           .timeout(const Duration(seconds: 15));
-      if (res.statusCode >= 200 && res.statusCode < 300 && res.body.isNotEmpty) {
+      if (res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          res.body.isNotEmpty) {
         return res.body;
       }
       return null;
@@ -111,13 +155,25 @@ class ReceptionApi {
     }
   }
 
-  Future<List<int>?> exportReport({required String format, String? date}) async {
+  Future<List<int>?> exportReport({
+    required String format,
+    String? date,
+  }) async {
     try {
-      final query = date == null ? '' : '&date=$date&start_date=$date&end_date=$date';
+      final query = date == null
+          ? ''
+          : '&date=$date&start_date=$date&end_date=$date';
       final res = await http
-          .get(Uri.parse('${AppTheme.apiBaseUrl}/reports/export?format=$format$query'), headers: _headers)
+          .get(
+            Uri.parse(
+              '${AppTheme.apiBaseUrl}/reports/export?format=$format$query',
+            ),
+            headers: _headers,
+          )
           .timeout(const Duration(seconds: 30));
-      if (res.statusCode >= 200 && res.statusCode < 300 && res.bodyBytes.isNotEmpty) {
+      if (res.statusCode >= 200 &&
+          res.statusCode < 300 &&
+          res.bodyBytes.isNotEmpty) {
         return res.bodyBytes;
       }
       return null;
