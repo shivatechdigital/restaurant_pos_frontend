@@ -97,7 +97,7 @@ class AdminTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (isMobile)
+          if (onMenuPressed != null)
             IconButton(
               onPressed: onMenuPressed,
               icon: const Icon(Icons.menu, color: Colors.black87),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/order_model.dart';
 import '../models/payment_model.dart';
 import '../services/api_service.dart';
@@ -51,7 +52,9 @@ class OrderProvider extends ChangeNotifier {
     try {
       final result = await _api.getOrderPolicy();
       if (result['success'] == true) {
-        _customerSelfCancelEnabled = result['data']?['kitchen_mode'] == 'kds' && result['data']?['customer_self_cancel'] == true;
+        _customerSelfCancelEnabled =
+            result['data']?['kitchen_mode'] == 'kds' &&
+            result['data']?['customer_self_cancel'] == true;
         notifyListeners();
       }
     } catch (e) {
@@ -217,8 +220,7 @@ class OrderProvider extends ChangeNotifier {
       final result = await _api.getMyOrders(_sessionId!);
       if (result['success'] == true) {
         final orders = result['data'] as List;
-        _orderHistory =
-            orders.map((o) => OrderData.fromJson(o)).toList();
+        _orderHistory = orders.map((o) => OrderData.fromJson(o)).toList();
         notifyListeners();
       }
     } catch (e) {
@@ -262,7 +264,8 @@ class OrderProvider extends ChangeNotifier {
       final createResult = await _api.createPayment(sessionId, amount);
 
       if (createResult['success'] != true) {
-        _paymentError = createResult['message'] ?? 'Payment order create nahi hua';
+        _paymentError =
+            createResult['message'] ?? 'Payment order create nahi hua';
         _isPaymentProcessing = false;
         notifyListeners();
         return false;
@@ -305,7 +308,8 @@ class OrderProvider extends ChangeNotifier {
         notifyListeners();
         return true;
       } else {
-        _paymentError = verifyResult['message'] ?? 'Payment verification failed';
+        _paymentError =
+            verifyResult['message'] ?? 'Payment verification failed';
         _paymentStatus = PaymentStatus.failed;
         notifyListeners();
         return false;

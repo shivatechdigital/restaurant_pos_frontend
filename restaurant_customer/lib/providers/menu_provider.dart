@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/menu_model.dart';
 import '../services/api_service.dart';
 
@@ -9,11 +10,13 @@ class MenuProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _error = '';
   String _searchQuery = '';
+  bool _vegOnly = false;
 
   List<Category> get categories => _categories;
   bool get isLoading => _isLoading;
   String get error => _error;
   String get searchQuery => _searchQuery;
+  bool get vegOnly => _vegOnly;
 
   // Total items count
   int get totalItems =>
@@ -21,9 +24,9 @@ class MenuProvider extends ChangeNotifier {
 
   // Available items count
   int get availableItems => _categories.fold(
-      0,
-      (sum, cat) =>
-          sum + cat.items.where((i) => i.isAvailable).length);
+    0,
+    (sum, cat) => sum + cat.items.where((i) => i.isAvailable).length,
+  );
 
   // Menu load karo
   Future<void> loadMenu(String restaurantId) async {
@@ -55,21 +58,25 @@ class MenuProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setVegOnly(bool enabled) {
+    _vegOnly = enabled;
+    notifyListeners();
+  }
+
   // Filtered categories (search ke hisaab se)
   List<Category> get filteredCategories {
-    if (_searchQuery.isEmpty) return _categories;
+    if (_searchQuery.isEmpty && !_vegOnly) return _categories;
 
     return _categories
         .map((cat) {
           final filteredItems = cat.items.where((item) {
-            return item.name.toLowerCase().contains(_searchQuery) ||
+            final matchesSearch =
+                _searchQuery.isEmpty ||
+                item.name.toLowerCase().contains(_searchQuery) ||
                 item.description.toLowerCase().contains(_searchQuery);
+            return matchesSearch && (!_vegOnly || item.isVeg);
           }).toList();
-          return Category(
-            id: cat.id,
-            name: cat.name,
-            items: filteredItems,
-          );
+          return Category(id: cat.id, name: cat.name, items: filteredItems);
         })
         .where((cat) => cat.items.isNotEmpty)
         .toList();

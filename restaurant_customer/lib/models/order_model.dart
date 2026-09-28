@@ -28,7 +28,8 @@ class OrderData {
           ? _parseAmount(json['final_amount'])
           : null,
       placedAt: json['placed_at'],
-      items: (json['items'] as List?)
+      items:
+          (json['items'] as List?)
               ?.map((i) => OrderItemData.fromJson(i))
               .toList() ??
           [],
@@ -152,9 +153,8 @@ class BillData {
     final summary = json['summary'] as Map<String, dynamic>;
     return BillData(
       tableNumber: json['table_number'] ?? '',
-      items: (json['items'] as List?)
-              ?.map((i) => BillItem.fromJson(i))
-              .toList() ??
+      items:
+          (json['items'] as List?)?.map((i) => BillItem.fromJson(i)).toList() ??
           [],
       subtotal: _parseAmount(summary['subtotal']),
       cgst: _parseAmount(summary['cgst']),
@@ -162,7 +162,9 @@ class BillData {
       serviceCharge: _parseAmount(summary['service_charge']),
       finalAmount: _parseAmount(summary['final_amount']),
       paidAmount: _parseAmount(summary['paid_amount'] ?? 0),
-      outstandingAmount: _parseAmount(summary['outstanding_amount'] ?? summary['final_amount']),
+      outstandingAmount: _parseAmount(
+        summary['outstanding_amount'] ?? summary['final_amount'],
+      ),
     );
   }
 }

@@ -55,8 +55,16 @@ class _TableManagementScreenState extends State<TableManagementScreen>
 
   Future<void> _loadQrBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedUrl = prefs.getString(_qrBaseUrlPrefKey)?.trim();
+    final isLegacyRootUrl = savedUrl == ApiConfig.serverOrigin || savedUrl == '${ApiConfig.serverOrigin}/';
+    final qrBaseUrl = savedUrl == null || savedUrl.isEmpty || isLegacyRootUrl
+        ? ApiConfig.customerAppUrl
+        : savedUrl;
+    if (savedUrl != qrBaseUrl) {
+      await prefs.setString(_qrBaseUrlPrefKey, qrBaseUrl);
+    }
     if (!mounted) return;
-    setState(() => _qrBaseUrl = prefs.getString(_qrBaseUrlPrefKey) ?? ApiConfig.serverOrigin);
+    setState(() => _qrBaseUrl = qrBaseUrl);
   }
 
   Future<void> _saveQrBaseUrl(String value) async {
@@ -132,17 +140,13 @@ class _TableManagementScreenState extends State<TableManagementScreen>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (isDesktop)
-              Container(
-                width: 220,
-                color: const Color(0xFF1E1E1E),
-                child: AppSidebar(activeLabel: 'Table Management'),
-              ),
+              const CollapsibleSidebar(activeLabel: 'Table Management'),
             Expanded(
               child: Column(
                 children: [
                   AdminTopBar(
                     isMobile: isMobile,
-                    onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                    onMenuPressed: !isDesktop ? () => Scaffold.of(context).openDrawer() : null,
                     title: 'Table Management',
                   ),
                   Expanded(
@@ -427,6 +431,16 @@ class _TableManagementScreenState extends State<TableManagementScreen>
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              ElevatedButton.icon(
+                onPressed: _showOffPremiseQrDialog,
+                icon: const Icon(Icons.qr_code_2, size: 18),
+                label: const Text('Takeaway / Delivery QR'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1B5E20),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 8),
               _viewModeBtn(Icons.grid_view_rounded, 'grid'),
               _viewModeBtn(Icons.view_list_rounded, 'list'),
             ],
@@ -1084,18 +1098,129 @@ class _TableManagementScreenState extends State<TableManagementScreen>
   }
 
   // ===================== QR CODE DIALOG =====================
+  String _customerOrderingBaseUrl() {
+    final value = _qrBaseUrl.trim().isEmpty ? ApiConfig.customerAppUrl : _qrBaseUrl.trim();
+    final uri = Uri.tryParse(value);
+    final productionOrigin = Uri.parse(ApiConfig.serverOrigin);
+    final isProductionCustomerPath = uri != null &&
+        uri.host == productionOrigin.host &&
+        (uri.path.isEmpty || uri.path == '/' || uri.path == '/customer' || uri.path == '/customer/');
+    if (isProductionCustomerPath) {
+      return ApiConfig.customerAppUrl;
+    }
+    return value;
+  }
+
   String _qrValueFor(dynamic table) {
     final number = table['table_number'] ?? table['number'] ?? '';
     final restaurantId = context.read<AdminProvider>().restaurantId;
-    final base = _qrBaseUrl.trim().isEmpty ? ApiConfig.serverOrigin : _qrBaseUrl.trim();
-    final normalizedBase = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
-    final separator = normalizedBase.contains('?') ? '&' : '?';
-    return '$normalizedBase$separator' 'table=$number&restaurant=$restaurantId';
+    final baseUri = Uri.parse(_customerOrderingBaseUrl());
+    return baseUri.replace(queryParameters: {
+      'table': number.toString(),
+      'restaurant': restaurantId.toString(),
+    }).toString();
+  }
+
+  String _offPremiseQrValue() {
+    final restaurantId = context.read<AdminProvider>().restaurantId;
+    final baseUri = Uri.parse(_customerOrderingBaseUrl());
+    return baseUri.replace(queryParameters: {
+      'order': 'off-premise',
+      'restaurant': restaurantId.toString(),
+    }).toString();
+  }
+
+  void _showOffPremiseQrDialog() {
+    final normalizedBaseUrl = _customerOrderingBaseUrl();
+    if (_qrBaseUrl != normalizedBaseUrl) {
+      _qrBaseUrl = normalizedBaseUrl;
+      _saveQrBaseUrl(normalizedBaseUrl);
+    }
+    final urlCtrl = TextEditingController(text: normalizedBaseUrl);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final qrValue = _qrBaseUrl.trim().isEmpty ? null : _offPremiseQrValue();
+          return AlertDialog(
+            title: const Text('Takeaway / Delivery QR'),
+            content: SizedBox(
+              width: 320,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Is ek QR ko kahin bhi laga sakte hain. Customer scan karke Takeaway ya Delivery choose karega.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: urlCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Customer ordering app link',
+                      hintText: 'https://order.yourrestaurant.com',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onChanged: (value) async {
+                      setDialogState(() => _qrBaseUrl = value);
+                      await _saveQrBaseUrl(value);
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  if (qrValue == null)
+                    Container(
+                      height: 200,
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Ordering app ka link daalo, phir shared QR yahan ban jayega',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey.shade500),
+                      ),
+                    )
+                  else ...[
+                    QrImageView(
+                      data: qrValue,
+                      version: QrVersions.auto,
+                      size: 200,
+                      backgroundColor: Colors.white,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(qrValue, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+              if (qrValue != null)
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: qrValue));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link copied')),
+                    );
+                  },
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('Copy Link'),
+                ),
+            ],
+          );
+        },
+      ),
+    ).whenComplete(urlCtrl.dispose);
   }
 
   void _showQrDialog(dynamic table) {
     final number = table['table_number'] ?? table['number'] ?? '—';
-    final urlCtrl = TextEditingController(text: _qrBaseUrl.trim().isEmpty ? ApiConfig.serverOrigin : _qrBaseUrl);
+    final normalizedBaseUrl = _customerOrderingBaseUrl();
+    if (_qrBaseUrl != normalizedBaseUrl) {
+      _qrBaseUrl = normalizedBaseUrl;
+      _saveQrBaseUrl(normalizedBaseUrl);
+    }
+    final urlCtrl = TextEditingController(text: normalizedBaseUrl);
 
     showDialog(
       context: context,

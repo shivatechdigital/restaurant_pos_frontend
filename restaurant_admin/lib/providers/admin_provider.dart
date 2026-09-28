@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+
 import '../services/api_service.dart';
 
 class AdminProvider extends ChangeNotifier {
@@ -53,6 +56,7 @@ class AdminProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  String? staffError; // Added to hold the error message for staff creation
   // ---- DASHBOARD ----
   Future<void> loadDashboard() async {
     isLoading = true;
@@ -100,79 +104,164 @@ class AdminProvider extends ChangeNotifier {
   Future<void> loadCoupons() async {
     try {
       final r = await _api.getCoupons();
-      if (r['success'] == true) { coupons = r['data'] ?? []; notifyListeners(); }
-    } catch (e) { debugPrint('Coupons error: $e'); }
+      if (r['success'] == true) {
+        coupons = r['data'] ?? [];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Coupons error: $e');
+    }
   }
 
   Future<void> loadDeliveryPartners() async {
-    try { final r = await _api.getDeliveryPartners(); if (r['success'] == true) { deliveryPartners = r['data'] ?? []; notifyListeners(); } } catch (e) { debugPrint('Delivery partners error: $e'); }
+    try {
+      final r = await _api.getDeliveryPartners();
+      if (r['success'] == true) {
+        deliveryPartners = r['data'] ?? [];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Delivery partners error: $e');
+    }
   }
 
   Future<bool> createDeliveryPartner(Map<String, dynamic> body) async {
-    try { final r = await _api.createDeliveryPartner(body); if (r['success'] == true) { await loadDeliveryPartners(); return true; } } catch (e) { debugPrint('Create partner error: $e'); }
+    try {
+      final r = await _api.createDeliveryPartner(body);
+      if (r['success'] == true) {
+        await loadDeliveryPartners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Create partner error: $e');
+    }
     return false;
   }
 
   Future<void> loadReservations() async {
-    try { final r = await _api.getReservations(); if (r['success'] == true) { reservations = r['data'] ?? []; notifyListeners(); } } catch (e) { debugPrint('Reservations error: $e'); }
+    try {
+      final r = await _api.getReservations();
+      if (r['success'] == true) {
+        reservations = r['data'] ?? [];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Reservations error: $e');
+    }
   }
 
   Future<bool> createReservation(Map<String, dynamic> body) async {
-    try { final r = await _api.createReservation(body); if (r['success'] == true) { await loadReservations(); await loadTables(); return true; } } catch (e) { debugPrint('Create reservation error: $e'); }
+    try {
+      final r = await _api.createReservation(body);
+      if (r['success'] == true) {
+        await loadReservations();
+        await loadTables();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Create reservation error: $e');
+    }
     return false;
   }
 
   Future<bool> checkInReservation(int id) async {
-    try { final r = await _api.checkInReservation(id); if (r['success'] == true) { await loadReservations(); await loadTables(); return true; } } catch (e) { debugPrint('Reservation check-in error: $e'); }
+    try {
+      final r = await _api.checkInReservation(id);
+      if (r['success'] == true) {
+        await loadReservations();
+        await loadTables();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Reservation check-in error: $e');
+    }
     return false;
   }
 
   Future<bool> assignDelivery(int orderId, int partnerId) async {
-    try { final r = await _api.assignDelivery(orderId, partnerId); if (r['success'] == true) { await loadOrders(); return true; } } catch (e) { debugPrint('Assign delivery error: $e'); }
+    try {
+      final r = await _api.assignDelivery(orderId, partnerId);
+      if (r['success'] == true) {
+        await loadOrders();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Assign delivery error: $e');
+    }
     return false;
   }
 
   Future<bool> updateDeliveryStatus(int orderId, String status) async {
-    try { final r = await _api.updateDeliveryStatus(orderId, status); if (r['success'] == true) { await loadOrders(); return true; } } catch (e) { debugPrint('Delivery status error: $e'); }
+    try {
+      final r = await _api.updateDeliveryStatus(orderId, status);
+      if (r['success'] == true) {
+        await loadOrders();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Delivery status error: $e');
+    }
     return false;
   }
 
   Future<void> loadCustomers({String? search, String? segment}) async {
     try {
       final r = await _api.getCustomers(search: search, segment: segment);
-      if (r['success'] == true) { customers = r['data'] ?? []; notifyListeners(); }
-    } catch (e) { debugPrint('Customers error: $e'); }
+      if (r['success'] == true) {
+        customers = r['data'] ?? [];
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Customers error: $e');
+    }
   }
 
   Future<Map<String, dynamic>?> loadCustomer(int id) async {
     try {
       final r = await _api.getCustomer(id);
       return r['success'] == true ? r['data'] : null;
-    } catch (e) { debugPrint('Customer profile error: $e'); }
+    } catch (e) {
+      debugPrint('Customer profile error: $e');
+    }
     return null;
   }
 
   Future<bool> updateCustomer(int id, Map<String, dynamic> body) async {
     try {
       final r = await _api.updateCustomer(id, body);
-      if (r['success'] == true) { await loadCustomers(); return true; }
-    } catch (e) { debugPrint('Customer update error: $e'); }
+      if (r['success'] == true) {
+        await loadCustomers();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Customer update error: $e');
+    }
     return false;
   }
 
   Future<bool> createCoupon(Map<String, dynamic> body) async {
     try {
       final r = await _api.createCoupon(body);
-      if (r['success'] == true) { await loadCoupons(); return true; }
-    } catch (e) { debugPrint('Coupon create error: $e'); }
+      if (r['success'] == true) {
+        await loadCoupons();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Coupon create error: $e');
+    }
     return false;
   }
 
   Future<bool> toggleCoupon(int id, bool isActive) async {
     try {
       final r = await _api.toggleCoupon(id, isActive);
-      if (r['success'] == true) { await loadCoupons(); return true; }
-    } catch (e) { debugPrint('Coupon toggle error: $e'); }
+      if (r['success'] == true) {
+        await loadCoupons();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Coupon toggle error: $e');
+    }
     return false;
   }
 
@@ -215,7 +304,8 @@ class AdminProvider extends ChangeNotifier {
     return false;
   }
 
-  Future<String?> downloadDailyClosingCsv(String date) => _api.downloadDailyClosingCsv(date);
+  Future<String?> downloadDailyClosingCsv(String date) =>
+      _api.downloadDailyClosingCsv(date);
 
   Future<bool> closeDay(Map<String, dynamic> body) async {
     try {
@@ -353,9 +443,14 @@ class AdminProvider extends ChangeNotifier {
     ordersError = null;
     notifyListeners();
     try {
-      final r = await _api.getAllOrders(date: date, status: status, orderId: orderId);
+      final r = await _api.getAllOrders(
+        date: date,
+        status: status,
+        orderId: orderId,
+      );
       if (r['success'] == true) {
-        orders = r['data']['orders'] ?? [];
+        final loadedOrders = List<dynamic>.from(r['data']['orders'] ?? []);
+        orders = await _enrichOrderPayments(loadedOrders);
         totalOrders = r['data']['total'] ?? 0;
       } else {
         ordersError = r['message']?.toString() ?? 'Orders load nahi ho paaye';
@@ -366,6 +461,60 @@ class AdminProvider extends ChangeNotifier {
     }
     isOrdersLoading = false;
     notifyListeners();
+  }
+
+  Future<List<dynamic>> _enrichOrderPayments(List<dynamic> loadedOrders) async {
+    final enriched = loadedOrders
+        .map((order) => Map<String, dynamic>.from(order as Map))
+        .toList();
+    final missing = enriched
+        .where(
+          (order) =>
+              order['payment_status'] == null && order['session_id'] != null,
+        )
+        .toList();
+
+    for (var start = 0; start < missing.length; start += 5) {
+      final end = (start + 5 < missing.length) ? start + 5 : missing.length;
+      await Future.wait(
+        missing.sublist(start, end).map((order) async {
+          final sessionId = int.tryParse(order['session_id'].toString());
+          if (sessionId == null) return;
+
+          try {
+            final response = await _api.getPaymentStatus(sessionId);
+            if (response['success'] != true || response['data'] is! List)
+              return;
+            final payments = List<dynamic>.from(response['data']);
+            if (payments.isEmpty) return;
+
+            final successful = payments
+                .where((payment) => payment['status'] == 'success')
+                .toList();
+            final paidAmount = successful.fold<double>(
+              0,
+              (sum, payment) =>
+                  sum +
+                  (double.tryParse(payment['amount']?.toString() ?? '') ?? 0),
+            );
+            final orderAmount =
+                double.tryParse(order['final_amount']?.toString() ?? '') ?? 0;
+            final selected = successful.isNotEmpty
+                ? successful.first
+                : payments.first;
+
+            order['payment_method'] = selected['payment_method'];
+            order['payment_status'] = paidAmount + 0.01 >= orderAmount
+                ? 'success'
+                : selected['status'];
+          } catch (error) {
+            debugPrint('Payment status error for session $sessionId: $error');
+          }
+        }),
+      );
+    }
+
+    return enriched;
   }
 
   // ---- STAFF ----
@@ -396,6 +545,7 @@ class AdminProvider extends ChangeNotifier {
   }
 
   Future<bool> createStaff(Map<String, dynamic> body) async {
+    staffError = null;
     try {
       final r = await _api.createStaff(body);
       if (r['success'] == true) {
@@ -403,8 +553,10 @@ class AdminProvider extends ChangeNotifier {
         await loadAuditLogs();
         return true;
       }
+      staffError = r['message']?.toString() ?? 'Staff member could not be saved';
     } catch (e) {
       debugPrint('Create staff error: $e');
+      staffError = e.toString();
     }
     return false;
   }
@@ -511,7 +663,12 @@ class AdminProvider extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> adjustMaterial(int id, double changeQty, String type, String notes) async {
+  Future<bool> adjustMaterial(
+    int id,
+    double changeQty,
+    String type,
+    String notes,
+  ) async {
     try {
       final r = await _api.adjustMaterial(id, changeQty, type, notes);
       if (r['success'] == true) {
@@ -613,7 +770,10 @@ class AdminProvider extends ChangeNotifier {
     return [];
   }
 
-  Future<bool> saveRecipe(int menuItemId, List<Map<String, dynamic>> materials) async {
+  Future<bool> saveRecipe(
+    int menuItemId,
+    List<Map<String, dynamic>> materials,
+  ) async {
     try {
       final r = await _api.saveRecipe(menuItemId, materials);
       return r['success'] == true;

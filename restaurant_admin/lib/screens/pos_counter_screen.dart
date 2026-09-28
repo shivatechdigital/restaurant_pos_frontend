@@ -404,11 +404,7 @@ class _PosCounterScreenState extends State<PosCounterScreen> {
 
   // ==================== SIDEBAR ====================
   Widget _buildSidebar() {
-    return Container(
-      width: 220,
-      color: const Color(0xFF2D2D2D),
-      child: const AppSidebar(activeLabel: 'POS Counter'),
-    );
+    return const CollapsibleSidebar(activeLabel: 'POS Counter');
   }
 
   Widget _buildDrawer() {

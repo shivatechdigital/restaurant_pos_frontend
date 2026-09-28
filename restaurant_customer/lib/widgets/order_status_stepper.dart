@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/order_model.dart';
 
 class OrderStatusStepper extends StatelessWidget {
@@ -84,8 +85,8 @@ class OrderStatusStepper extends StatelessWidget {
                                   color: isCompleted
                                       ? const Color(0xFF1B5E20)
                                       : isCurrent
-                                          ? const Color(0xFF2E7D32)
-                                          : Colors.grey[200],
+                                      ? const Color(0xFF2E7D32)
+                                      : Colors.grey[200],
                                   shape: BoxShape.circle,
                                   boxShadow: isCurrent
                                       ? [
@@ -94,7 +95,7 @@ class OrderStatusStepper extends StatelessWidget {
                                                 .withValues(alpha: 0.4),
                                             blurRadius: 12,
                                             spreadRadius: 2,
-                                          )
+                                          ),
                                         ]
                                       : null,
                                 ),

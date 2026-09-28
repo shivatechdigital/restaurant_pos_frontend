@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+
+import '../models/menu_model.dart';
 import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../config/socket_service.dart';
+import '../config/responsive.dart';
 import '../services/session_service.dart';
 import '../widgets/menu_item_card.dart';
 import 'cart_screen.dart';
 import 'landing_screen.dart';
 import 'order_history_screen.dart';
+import 'payment_screen.dart';
 
 class MenuScreen extends StatefulWidget {
   final String restaurantId;
@@ -32,8 +37,7 @@ class MenuScreen extends StatefulWidget {
 
 class _MenuScreenState extends State<MenuScreen> {
   final _searchCtrl = TextEditingController();
-  // -1 matlab "All" tab selected hai
-  int _selectedCategoryIndex = -1;
+  int? _selectedCategoryId;
 
   @override
   void initState() {
@@ -51,29 +55,35 @@ class _MenuScreenState extends State<MenuScreen> {
     final cart = context.watch<CartProvider>();
     final filtered = menu.filteredCategories;
 
-    // "All" selected hai toh saari categories, warna sirf chuni hui category
-    final displayCategories = (_selectedCategoryIndex == -1 ||
-            _selectedCategoryIndex >= filtered.length)
+    final selectedCategories = filtered
+        .where((category) => category.id == _selectedCategoryId)
+        .toList();
+    final displayCategories = selectedCategories.isEmpty
         ? filtered
-        : [filtered[_selectedCategoryIndex]];
+        : selectedCategories;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF7F7F7),
 
       // ---- APP BAR ----
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF191919),
         elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Table ${widget.tableNumber}',
-                style: const TextStyle(fontSize: 16)),
+            const Text(
+              'Sarjapur PetPooja',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
             Text(
-              'Room Code: ${widget.roomCode}  •  Share with friends',
+              'You are sitting at Table ${widget.tableNumber}',
               style: const TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.normal),
+                fontSize: 11,
+                fontWeight: FontWeight.normal,
+                color: Color(0xFF737373),
+              ),
             ),
           ],
         ),
@@ -104,15 +114,13 @@ class _MenuScreenState extends State<MenuScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Row(
-                    children: [
-                      Text('🛎️ '),
-                      Text('Waiter ko bula liya gaya!'),
-                    ],
+                    children: [Text('🛎️ '), Text('Waiter ko bula liya gaya!')],
                   ),
                   backgroundColor: Colors.orange[700],
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               );
             },
@@ -125,247 +133,469 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFF1B5E20)),
+                  CircularProgressIndicator(color: Color(0xFFF45B15)),
                   SizedBox(height: 12),
                   Text('Menu load ho raha hai...'),
                 ],
               ),
             )
           : menu.error.isNotEmpty
-              ? _errorView(menu)
-              : Column(
-                  children: [
-                    // ---- SEARCH BAR ----
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-                      child: TextField(
-                        controller: _searchCtrl,
-                        onChanged: (val) => menu.search(val),
-                        decoration: InputDecoration(
-                          hintText: '🔍 Search dish... (e.g., Paneer, Biryani)',
-                          filled: true,
-                          fillColor: Colors.white,
-                          prefixIcon: const Icon(Icons.search,
-                              color: Colors.grey),
-                          suffixIcon: _searchCtrl.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchCtrl.clear();
-                                    menu.search('');
-                                  },
-                                )
-                              : null,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-
-                    // ---- CATEGORY TABS ----
-                    if (filtered.length > 1)
-                      SizedBox(
-                        height: 44,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          itemCount: filtered.length + 1,
-                          itemBuilder: (context, index) {
-                            // Pehla chip hamesha "All"
-                            final isAllChip = index == 0;
-                            final catIndex = index - 1;
-                            final isSelected = isAllChip
-                                ? _selectedCategoryIndex == -1
-                                : _selectedCategoryIndex == catIndex;
-                            final label = isAllChip
-                                ? 'All (${menu.totalItems})'
-                                : '${filtered[catIndex].name} (${filtered[catIndex].items.length})';
-
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: ChoiceChip(
-                                label: Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
+          ? _errorView(menu)
+          : Column(
+              children: [
+                Padding(
+                  padding: CustomerResponsive.pagePadding(context),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchCtrl,
+                          onChanged: menu.search,
+                          decoration: InputDecoration(
+                            hintText: 'Search dishes',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchCtrl.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: 'Clear search',
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () {
+                                      _searchCtrl.clear();
+                                      menu.search('');
+                                    },
                                   ),
-                                ),
-                                selected: isSelected,
-                                selectedColor: const Color(0xFF1B5E20),
-                                labelStyle: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors.grey[700],
-                                ),
-                                onSelected: (_) {
-                                  setState(() => _selectedCategoryIndex =
-                                      isAllChip ? -1 : catIndex);
-                                },
-                              ),
-                            );
-                          },
+                            filled: true,
+                            fillColor: Colors.white,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
                         ),
                       ),
-
-                    // ---- MENU ITEMS ----
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.search_off,
-                                      size: 50, color: Colors.grey),
-                                  SizedBox(height: 8),
-                                  Text('Koi item nahi mila',
-                                      style: TextStyle(color: Colors.grey)),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              padding:
-                                  const EdgeInsets.only(top: 8, bottom: 90),
-                              itemCount: displayCategories.length,
-                              itemBuilder: (context, catIndex) {
-                                final category = displayCategories[catIndex];
-
-                                return Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    // Category Header
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          16, 16, 16, 4),
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            width: 4,
-                                            height: 20,
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  const Color(0xFF1B5E20),
-                                              borderRadius:
-                                                  BorderRadius.circular(2),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            category.name,
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF1B5E20),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            '(${category.items.length})',
-                                            style: TextStyle(
-                                                color: Colors.grey[400],
-                                                fontSize: 14),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    // Items
-                                    ...category.items
-                                        .map((item) => MenuItemCard(
-                                            item: item)),
-                                  ],
-                                );
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-
-      // ---- FLOATING CART BAR (hamesha dikhega, khaali ho tab bhi) ----
-      bottomNavigationBar: SafeArea(
-              minimum: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: SizedBox(
-                height: 64,
-                child: Material(
-                  color: cart.isEmpty
-                      ? Colors.grey[400]
-                      : const Color(0xFF1B5E20),
-                  borderRadius: BorderRadius.circular(14),
-                  elevation: 6,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: cart.isEmpty
-                        ? null
-                        : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CartScreen(
-                            tableId: widget.tableId,
-                            restaurantId: widget.restaurantId,
-                            sessionId: widget.sessionId,
-                            tableNumber: widget.tableNumber,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      const SizedBox(width: 10),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${cart.totalItems} item${cart.totalItems != 1 ? 's' : ''}',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.85),
-                                  fontSize: 12,
-                                ),
-                              ),
-                              Text(
-                                '₹${cart.totalAmount.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                          const Text(
+                            'Veg only',
+                            style: TextStyle(fontSize: 11),
                           ),
-                          const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'View Cart',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(width: 6),
-                              Icon(Icons.arrow_forward,
-                                  color: Colors.white, size: 18),
-                            ],
+                          SizedBox(
+                            height: 30,
+                            child: Switch.adaptive(
+                              value: menu.vegOnly,
+                              activeTrackColor: const Color(0xFFF45B15),
+                              onChanged: menu.setVegOnly,
+                            ),
                           ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+
+                _buildCategoryRail(filtered),
+
+                // ---- MENU ITEMS ----
+                Expanded(
+                  child: filtered.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Koi item nahi mila',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView(
+                          padding: const EdgeInsets.only(bottom: 24),
+                          children: [
+                            _buildFeaturedBanner(menu.categories),
+                            _buildTablePinCard(),
+                            ...displayCategories.map(
+                              (category) => _buildCategorySection(category),
+                            ),
+                            _buildRestaurantFooter(),
+                          ],
+                        ),
+                ),
+              ],
+            ),
+
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!cart.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFF45B15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: _openCart,
+                    child: Text(
+                      'CONFIRM ORDER (${cart.totalItems} ${cart.totalItems == 1 ? 'item' : 'items'})',
                     ),
                   ),
                 ),
               ),
+            NavigationBar(
+              height: 64,
+              backgroundColor: Colors.white,
+              indicatorColor: const Color(0xFFFFE5D8),
+              selectedIndex: 0,
+              onDestinationSelected: _selectBottomTab,
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.menu_book_outlined),
+                  selectedIcon: Icon(Icons.menu_book),
+                  label: 'Menu',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.room_service_outlined),
+                  selectedIcon: Icon(Icons.room_service),
+                  label: 'Orders',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.receipt_long_outlined),
+                  selectedIcon: Icon(Icons.receipt_long),
+                  label: 'Pay Bill',
+                ),
+              ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryRail(List<Category> categories) {
+    return SizedBox(
+      height: 132,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        children: [
+          _categoryTile(null, 'All', null),
+          ...categories.map((category) {
+            final image = category.items
+                .where((item) => item.imageUrl?.isNotEmpty == true)
+                .firstOrNull
+                ?.imageUrl;
+            return _categoryTile(category.id, category.name, image);
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _categoryTile(int? id, String name, String? imageUrl) {
+    final selected = _selectedCategoryId == id;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategoryId = id),
+      child: Container(
+        width: 92,
+        margin: const EdgeInsets.symmetric(horizontal: 5),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? const Color(0xFFF45B15) : const Color(0xFFE6E6E6),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: imageUrl == null
+                    ? Container(
+                        width: double.infinity,
+                        color: const Color(0xFFFFE9DD),
+                        child: const Icon(
+                          Icons.restaurant_menu,
+                          color: Color(0xFFF45B15),
+                        ),
+                      )
+                    : Image.network(
+                        imageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const ColoredBox(
+                          color: Color(0xFFFFE9DD),
+                          child: Center(
+                            child: Icon(
+                              Icons.restaurant,
+                              color: Color(0xFFF45B15),
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected
+                    ? const Color(0xFFF45B15)
+                    : const Color(0xFF454545),
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeaturedBanner(List<Category> categories) {
+    final featured = categories
+        .expand((category) => category.items)
+        .firstOrNull;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+      child: Container(
+        height: 158,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF45B15),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (featured?.imageUrl?.isNotEmpty == true)
+              Image.network(featured!.imageUrl!, fit: BoxFit.cover),
+            Container(color: Colors.black.withValues(alpha: 0.48)),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'GOOD FOOD, BETTER COMPANY',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    featured?.name ?? 'Find your next favourite',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Explore the menu, made fresh for your table.',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTablePinCard() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E5E5)),
+        ),
+        child: Row(
+          children: [
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Order together',
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Share your table PIN with your companions.',
+                    style: TextStyle(color: Color(0xFF777777), fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () async {
+                await Clipboard.setData(ClipboardData(text: widget.roomCode));
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Table PIN copied')),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF8F2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFB8E4D1)),
+                ),
+                child: Text(
+                  widget.roomCode,
+                  style: const TextStyle(
+                    color: Color(0xFF17885E),
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySection(Category category) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
+            child: Text(
+              category.name,
+              style: const TextStyle(
+                color: Color(0xFF263343),
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 760 ? 2 : 1;
+              final itemWidth =
+                  (constraints.maxWidth - (columns - 1) * 10) / columns;
+              return Wrap(
+                spacing: 10,
+                runSpacing: 4,
+                children: category.items
+                    .map(
+                      (item) => SizedBox(
+                        width: itemWidth,
+                        child: MenuItemCard(item: item),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestaurantFooter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+      child: Column(
+        children: [
+          const Divider(),
+          const SizedBox(height: 10),
+          Text(
+            'Sarjapur PetPooja  •  Table ${widget.tableNumber}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF777777), fontSize: 12),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Terms & Conditions     Privacy Policy',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF777777), fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openCart() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CartScreen(
+          tableId: widget.tableId,
+          restaurantId: widget.restaurantId,
+          sessionId: widget.sessionId,
+          tableNumber: widget.tableNumber,
+        ),
+      ),
+    );
+  }
+
+  void _selectBottomTab(int index) {
+    if (index == 0) return;
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => OrderHistoryScreen(
+            tableNumber: widget.tableNumber,
+            roomCode: widget.roomCode,
+          ),
+        ),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
+          sessionId: widget.sessionId,
+          tableNumber: widget.tableNumber,
+        ),
+      ),
     );
   }
 
@@ -378,13 +608,14 @@ class _MenuScreenState extends State<MenuScreen> {
           children: [
             const Icon(Icons.wifi_off, size: 50, color: Colors.red),
             const SizedBox(height: 12),
-            Text(menu.error,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16)),
+            Text(
+              menu.error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () =>
-                  menu.loadMenu(widget.restaurantId),
+              onPressed: () => menu.loadMenu(widget.restaurantId),
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
             ),

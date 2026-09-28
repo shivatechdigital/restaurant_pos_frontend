@@ -45,17 +45,13 @@ class _CustomersScreenState extends State<CustomersScreen> {
         child: Row(
           children: [
             if (isDesktop)
-              Container(
-                width: 220,
-                color: const Color(0xFF1E1E1E),
-                child: const AppSidebar(activeLabel: 'Customers'),
-              ),
+              const CollapsibleSidebar(activeLabel: 'Customers'),
             Expanded(
               child: Column(
                 children: [
                   AdminTopBar(
                     isMobile: isMobile,
-                    onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                    onMenuPressed: !isDesktop ? () => Scaffold.of(context).openDrawer() : null,
                     title: 'Customers & Loyalty',
                   ),
                   Expanded(

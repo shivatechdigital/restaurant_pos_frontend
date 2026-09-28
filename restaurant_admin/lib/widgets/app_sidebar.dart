@@ -13,10 +13,45 @@ import '../screens/settings_screen.dart';
 
 /// Shared left navigation used by MainDashboard and PosCounterScreen.
 /// Wrap in a fixed-width Container for desktop, or in a Drawer for mobile/tablet.
-class AppSidebar extends StatelessWidget {
+class CollapsibleSidebar extends StatefulWidget {
   final String activeLabel;
 
-  const AppSidebar({super.key, required this.activeLabel});
+  const CollapsibleSidebar({super.key, required this.activeLabel});
+
+  @override
+  State<CollapsibleSidebar> createState() => _CollapsibleSidebarState();
+}
+
+class _CollapsibleSidebarState extends State<CollapsibleSidebar> {
+  bool _collapsed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      width: _collapsed ? 72 : 220,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      color: const Color(0xFF2D2D2D),
+      child: AppSidebar(
+        activeLabel: widget.activeLabel,
+        collapsed: _collapsed,
+        onToggle: () => setState(() => _collapsed = !_collapsed),
+      ),
+    );
+  }
+}
+
+class AppSidebar extends StatelessWidget {
+  final String activeLabel;
+  final bool collapsed;
+  final VoidCallback? onToggle;
+
+  const AppSidebar({
+    super.key,
+    required this.activeLabel,
+    this.collapsed = false,
+    this.onToggle,
+  });
 
   static const List<Map<String, dynamic>> _menuItems = [
     {'icon': Icons.dashboard, 'label': 'Dashboard'},
@@ -60,13 +95,32 @@ class AppSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDrawer = Scaffold.maybeOf(context)?.hasDrawer ?? false;
+    final toggle = onToggle ?? (isDrawer ? () => Navigator.of(context).maybePop() : null);
+
     return Column(
       children: [
         // Logo Section
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 15),
+          padding: EdgeInsets.fromLTRB(collapsed ? 8 : 15, 12, collapsed ? 8 : 8, 16),
           child: Column(
             children: [
+              if (toggle != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Tooltip(
+                    message: isDrawer ? 'Close sidebar' : (collapsed ? 'Open sidebar' : 'Close sidebar'),
+                    child: IconButton(
+                      onPressed: toggle,
+                      icon: Icon(
+                        isDrawer
+                            ? Icons.close_rounded
+                            : (collapsed ? Icons.menu_open_rounded : Icons.chevron_left_rounded),
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                ),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -79,31 +133,33 @@ class AppSidebar extends StatelessWidget {
                   size: 32,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Pet Pooja',
-                style: TextStyle(
-                  color: Color(0xFFE67E22),
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
+              if (!collapsed) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Pet Pooja',
+                  style: TextStyle(
+                    color: Color(0xFFE67E22),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
-              ),
-              const Text(
-                'Restaurant Management',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 11,
+                const Text(
+                  'Restaurant Management',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'Good Food • Happy People',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 9,
+                const SizedBox(height: 2),
+                const Text(
+                  'Good Food • Happy People',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 9,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -126,44 +182,60 @@ class AppSidebar extends StatelessWidget {
                   color: isSelected
                       ? const Color(0xFFE67E22)
                       : Colors.transparent,
-                  child: ListTile(
-                    dense: true,
-                    leading: Icon(
-                      item['icon'] as IconData,
-                      color: isSelected ? Colors.white : Colors.white60,
-                      size: 20,
-                    ),
-                    title: Text(
-                      label,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white60,
-                        fontSize: 13,
-                      ),
-                    ),
-                    onTap: () => _onItemTap(context, label),
-                  ),
+                  child: collapsed
+                      ? Tooltip(
+                          message: label,
+                          child: InkWell(
+                            onTap: () => _onItemTap(context, label),
+                            child: SizedBox(
+                              height: 48,
+                              child: Icon(
+                                item['icon'] as IconData,
+                                color: isSelected ? Colors.white : Colors.white60,
+                                size: 21,
+                              ),
+                            ),
+                          ),
+                        )
+                      : ListTile(
+                          dense: true,
+                          leading: Icon(
+                            item['icon'] as IconData,
+                            color: isSelected ? Colors.white : Colors.white60,
+                            size: 20,
+                          ),
+                          title: Text(
+                            label,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.white60,
+                              fontSize: 13,
+                            ),
+                          ),
+                          onTap: () => _onItemTap(context, label),
+                        ),
                 ),
               );
             },
           ),
         ),
         // Version
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12, top: 4),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: const [
-              Text(
-                'Pet Pooja',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-              Text(
-                'v1.0.0',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-            ],
+        if (!collapsed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12, top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: const [
+                Text(
+                  'Pet Pooja',
+                  style: TextStyle(color: Colors.white38, fontSize: 11),
+                ),
+                Text(
+                  'v1.0.0',
+                  style: TextStyle(color: Colors.white38, fontSize: 11),
+                ),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }

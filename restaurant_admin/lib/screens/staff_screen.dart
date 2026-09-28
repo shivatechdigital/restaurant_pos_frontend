@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/admin_provider.dart';
 import '../widgets/admin_top_bar.dart';
 import '../widgets/app_sidebar.dart';
@@ -45,25 +47,27 @@ class _StaffScreenState extends State<StaffScreen>
     final isMobile = width < 700;
 
     return Scaffold(
-      drawer: isDesktop ? null : Drawer(
-        backgroundColor: const Color(0xFF1E1E1E),
-        child: const SafeArea(child: AppSidebar(activeLabel: 'Staff Management')),
-      ),
+      drawer: isDesktop
+          ? null
+          : Drawer(
+              backgroundColor: const Color(0xFF1E1E1E),
+              child: const SafeArea(
+                child: AppSidebar(activeLabel: 'Staff Management'),
+              ),
+            ),
       body: SafeArea(
         child: Row(
           children: [
             if (isDesktop)
-              Container(
-                width: 220,
-                color: const Color(0xFF1E1E1E),
-                child: const AppSidebar(activeLabel: 'Staff Management'),
-              ),
+              const CollapsibleSidebar(activeLabel: 'Staff Management'),
             Expanded(
               child: Column(
                 children: [
                   AdminTopBar(
                     isMobile: isMobile,
-                    onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                    onMenuPressed: !isDesktop
+                        ? () => Scaffold.of(context).openDrawer()
+                        : null,
                     title: 'Staff & Audit',
                   ),
                   TabBar(
@@ -115,14 +119,21 @@ class _StaffScreenState extends State<StaffScreen>
         return Card(
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: _roleColor(member['role']).withValues(alpha: 0.14),
-              child: Icon(_roleIcon(member['role']), color: _roleColor(member['role'])),
+              backgroundColor: _roleColor(member['role'])
+                  .withValues(alpha: 0.14),
+              child: Icon(
+                _roleIcon(member['role']),
+                color: _roleColor(member['role']),
+              ),
             ),
             title: Text(member['name'] ?? 'Unknown'),
-            subtitle: Text('${member['phone'] ?? ''} • ${(member['role'] ?? '').toString().toUpperCase()}'),
+            subtitle: Text(
+              '${member['phone'] ?? ''} • ${(member['role'] ?? '').toString().toUpperCase()}',
+            ),
             trailing: Switch(
               value: active,
-              onChanged: (value) => _updateMember(admin, member, isActive: value),
+              onChanged: (value) =>
+                  _updateMember(admin, member, isActive: value),
             ),
             onTap: () => _showStaffDialog(admin, member: member),
           ),
@@ -132,7 +143,8 @@ class _StaffScreenState extends State<StaffScreen>
   }
 
   Widget _performanceTab(AdminProvider admin) {
-    if (admin.staff.isEmpty) return const Center(child: Text('No staff performance data'));
+    if (admin.staff.isEmpty)
+      return const Center(child: Text('No staff performance data'));
     return ListView.builder(
       padding: const EdgeInsets.all(12),
       itemCount: admin.staff.length,
@@ -141,12 +153,22 @@ class _StaffScreenState extends State<StaffScreen>
         final name = staff['name'] ?? staff['ordered_by_name'] ?? 'Unknown';
         return Card(
           child: ListTile(
-            leading: CircleAvatar(child: Text(name.toString()[0].toUpperCase())),
-            title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('${staff['orders'] ?? staff['total_orders'] ?? 0} orders • Avg ${staff['avg_serve_time'] ?? staff['avg_prep_time'] ?? '?'} min'),
+            leading: CircleAvatar(
+              child: Text(name.toString()[0].toUpperCase()),
+            ),
+            title: Text(
+              name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              '${staff['orders'] ?? staff['total_orders'] ?? 0} orders • Avg ${staff['avg_serve_time'] ?? staff['avg_prep_time'] ?? '?'} min',
+            ),
             trailing: Text(
               '₹${_asDouble(staff['revenue'] ?? staff['total_revenue']).toStringAsFixed(0)}',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
             ),
           ),
         );
@@ -155,18 +177,26 @@ class _StaffScreenState extends State<StaffScreen>
   }
 
   Widget _auditTab(AdminProvider admin) {
-    if (admin.auditLogs.isEmpty) return const Center(child: Text('No audit events yet'));
+    if (admin.auditLogs.isEmpty)
+      return const Center(child: Text('No audit events yet'));
     return ListView.separated(
       padding: const EdgeInsets.all(12),
       itemCount: admin.auditLogs.length,
       separatorBuilder: (_, _) => const SizedBox(height: 4),
       itemBuilder: (context, index) {
         final log = admin.auditLogs[index];
-        final timestamp = DateTime.tryParse(log['created_at']?.toString() ?? '');
+        final timestamp = DateTime.tryParse(
+          log['created_at']?.toString() ?? '',
+        );
         return ListTile(
-          leading: Icon(_auditIcon(log['action']), color: const Color(0xFF1A237E)),
+          leading: Icon(
+            _auditIcon(log['action']),
+            color: const Color(0xFF1A237E),
+          ),
           title: Text(_auditLabel(log['action'])),
-          subtitle: Text('${log['actor_name'] ?? 'System'} • ${timestamp == null ? '' : '${timestamp.day}/${timestamp.month} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}'}'),
+          subtitle: Text(
+            '${log['actor_name'] ?? 'System'} • ${timestamp == null ? '' : '${timestamp.day}/${timestamp.month} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}'}',
+          ),
         );
       },
     );
@@ -181,7 +211,9 @@ class _StaffScreenState extends State<StaffScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(member == null ? 'Add Staff Member' : 'Edit Staff Member'),
+          title: Text(
+            member == null ? 'Add Staff Member' : 'Edit Staff Member',
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -194,7 +226,16 @@ class _StaffScreenState extends State<StaffScreen>
                 controller: phoneCtrl,
                 enabled: member == null,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Phone'),
+                maxLength: 10,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Phone',
+                  prefixText: '+91 ',
+                  counterText: '',
+                ),
               ),
               DropdownButtonFormField<String>(
                 initialValue: role,
@@ -202,6 +243,7 @@ class _StaffScreenState extends State<StaffScreen>
                 items: const [
                   DropdownMenuItem(value: 'waiter', child: Text('Waiter')),
                   DropdownMenuItem(value: 'kitchen', child: Text('Kitchen')),
+                  DropdownMenuItem(value: 'reception', child: Text('Reception')),
                   DropdownMenuItem(value: 'admin', child: Text('Admin')),
                 ],
                 onChanged: (value) => setDialogState(() => role = value!),
@@ -209,16 +251,32 @@ class _StaffScreenState extends State<StaffScreen>
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(ctx);
                 final ok = member == null
-                    ? await admin.createStaff({'name': nameCtrl.text.trim(), 'phone': phoneCtrl.text.trim(), 'role': role})
-                    : await admin.updateStaffMember(member['id'], {'role': role});
+                    ? await admin.createStaff({
+                        'name': nameCtrl.text.trim(),
+                        'phone': phoneCtrl.text.trim(),
+                        'role': role,
+                      })
+                    : await admin.updateStaffMember(member['id'], {
+                        'role': role,
+                      });
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(ok ? 'Staff member saved' : 'Unable to save staff member'), backgroundColor: ok ? Colors.green : Colors.red),
+                  SnackBar(
+                    content: Text(
+                      ok
+                          ? 'Staff member saved'
+                          : (admin.staffError ?? 'Unable to save staff member'),
+                    ),
+                    backgroundColor: ok ? Colors.green : Colors.red,
+                  ),
                 );
               },
               child: const Text('Save'),
@@ -229,11 +287,20 @@ class _StaffScreenState extends State<StaffScreen>
     );
   }
 
-  Future<void> _updateMember(AdminProvider admin, dynamic member, {required bool isActive}) async {
-    final ok = await admin.updateStaffMember(member['id'], {'is_active': isActive});
+  Future<void> _updateMember(
+    AdminProvider admin,
+    dynamic member, {
+    required bool isActive,
+  }) async {
+    final ok = await admin.updateStaffMember(member['id'], {
+      'is_active': isActive,
+    });
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(ok ? 'Staff status updated' : 'Unable to update staff'), backgroundColor: ok ? Colors.green : Colors.red),
+      SnackBar(
+        content: Text(ok ? 'Staff status updated' : 'Unable to update staff'),
+        backgroundColor: ok ? Colors.green : Colors.red,
+      ),
     );
   }
 
@@ -267,8 +334,10 @@ class _StaffScreenState extends State<StaffScreen>
     return Icons.manage_accounts;
   }
 
-  String _auditLabel(dynamic action) => (action?.toString() ?? 'system_event').replaceAll('_', ' ').toUpperCase();
+  String _auditLabel(dynamic action) =>
+      (action?.toString() ?? 'system_event').replaceAll('_', ' ').toUpperCase();
 
-  double _asDouble(dynamic value) =>
-      value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '') ?? 0;
+  double _asDouble(dynamic value) => value is num
+      ? value.toDouble()
+      : double.tryParse(value?.toString() ?? '') ?? 0;
 }

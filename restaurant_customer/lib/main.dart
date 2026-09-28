@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'providers/auth_provider.dart';
-import 'providers/menu_provider.dart';    // ← NAYA
-import 'providers/cart_provider.dart';    // ← NAYA
-import 'providers/order_provider.dart';   // ← NAYA
+import 'providers/menu_provider.dart'; // ← NAYA
+import 'providers/cart_provider.dart'; // ← NAYA
+import 'providers/order_provider.dart'; // ← NAYA
 import 'screens/landing_screen.dart';
 import 'screens/menu_screen.dart';
 import 'screens/off_premise_order_screen.dart';
@@ -22,17 +23,32 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => MenuProvider()),   // ← NAYA
-        ChangeNotifierProvider(create: (_) => CartProvider()),   // ← NAYA
-        ChangeNotifierProvider(create: (_) => OrderProvider()),  // ← NAYA
+        ChangeNotifierProvider(create: (_) => MenuProvider()), // ← NAYA
+        ChangeNotifierProvider(create: (_) => CartProvider()), // ← NAYA
+        ChangeNotifierProvider(create: (_) => OrderProvider()), // ← NAYA
       ],
       child: MaterialApp(
         title: 'Restaurant POS',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          fontFamily: 'Roboto',
+          fontFamily: 'Trebuchet MS',
           useMaterial3: true,
-          colorSchemeSeed: const Color(0xFF1B5E20),
+          colorSchemeSeed: const Color(0xFFF45B15),
+          scaffoldBackgroundColor: const Color(0xFFF7F7F7),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            foregroundColor: Color(0xFF191919),
+            elevation: 0,
+            centerTitle: false,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(14)),
+              borderSide: BorderSide.none,
+            ),
+          ),
         ),
         home: const SessionCheckScreen(),
       ),
@@ -61,7 +77,9 @@ class _SessionCheckScreenState extends State<SessionCheckScreen> {
 
     if (session != null) {
       if (session['type'] == 'off_premise') {
-        context.read<OrderProvider>().setSessionId(session['session_id'] as String);
+        context.read<OrderProvider>().setSessionId(
+          session['session_id'] as String,
+        );
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => OffPremiseTrackingScreen(
@@ -102,8 +120,7 @@ class _SessionCheckScreenState extends State<SessionCheckScreen> {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: CircularProgressIndicator(color: Color(0xFF1B5E20))),
+      body: Center(child: CircularProgressIndicator(color: Color(0xFFF45B15))),
     );
   }
 }
-

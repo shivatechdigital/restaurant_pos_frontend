@@ -144,11 +144,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
   // ==================== SIDEBAR ====================
   Widget _buildSidebar() {
-    return Container(
-      width: 220,
-      color: const Color(0xFF2D2D2D),
-      child: const AppSidebar(activeLabel: 'Dashboard'),
-    );
+    return const CollapsibleSidebar(activeLabel: 'Dashboard');
   }
 
   // ==================== TOP BAR ====================

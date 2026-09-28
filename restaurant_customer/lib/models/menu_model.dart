@@ -20,9 +20,8 @@ class Category {
       id: json['id'],
       name: json['name'],
       displayOrder: json['display_order'] ?? 0,
-      items: (json['items'] as List?)
-              ?.map((i) => MenuItem.fromJson(i))
-              .toList() ??
+      items:
+          (json['items'] as List?)?.map((i) => MenuItem.fromJson(i)).toList() ??
           [],
     );
   }
@@ -61,7 +60,8 @@ class MenuItem {
       isVeg: json['is_veg'] ?? true,
       isAvailable: json['is_available'] ?? true,
       prepTimeMinutes: json['prep_time_minutes'] ?? 10,
-      modifiers: (json['modifiers'] as List?)
+      modifiers:
+          (json['modifiers'] as List?)
               ?.map((m) => Modifier.fromJson(m))
               .toList() ??
           [],

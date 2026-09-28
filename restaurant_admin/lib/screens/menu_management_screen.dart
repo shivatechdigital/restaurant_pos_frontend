@@ -128,7 +128,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
           children: [
             // LEFT: Sidebar (Desktop)
             if (isDesktop)
-              Container(width: 220, color: const Color(0xFF1E1E1E), child: AppSidebar(activeLabel: 'Menu Management')),
+              const CollapsibleSidebar(activeLabel: 'Menu Management'),
             
             // MIDDLE: Menu List
             Expanded(
@@ -136,7 +136,7 @@ class _MenuManagementScreenState extends State<MenuManagementScreen> {
                 children: [
                   AdminTopBar(
                     isMobile: isMobile,
-                    onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                    onMenuPressed: !isDesktop ? () => Scaffold.of(context).openDrawer() : null,
                     title: 'Menu Management',
                   ),
                   Expanded(

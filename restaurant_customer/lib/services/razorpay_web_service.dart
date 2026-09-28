@@ -1,7 +1,9 @@
 // ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
 
 import 'dart:js' as js;
+
 import 'package:flutter/foundation.dart';
+
 import '../models/payment_model.dart';
 
 class RazorpayWebService {
@@ -24,13 +26,8 @@ class RazorpayWebService {
         'name': 'Restaurant POS',
         'description': description,
         'order_id': razorpayOrderId,
-        'prefill': {
-          'name': customerName,
-          'contact': customerPhone,
-        },
-        'theme': {
-          'color': '#1B5E20',
-        },
+        'prefill': {'name': customerName, 'contact': customerPhone},
+        'theme': {'color': '#1B5E20'},
         'modal': {
           'ondismiss': () {
             debugPrint('Razorpay modal closed by user');
@@ -48,21 +45,22 @@ class RazorpayWebService {
         final signature = jsResponse['razorpay_signature'] as String?;
 
         if (paymentId != null && orderId != null && signature != null) {
-          completer.complete(PaymentResult(
-            razorpayPaymentId: paymentId,
-            razorpayOrderId: orderId,
-            razorpaySignature: signature,
-          ));
+          completer.complete(
+            PaymentResult(
+              razorpayPaymentId: paymentId,
+              razorpayOrderId: orderId,
+              razorpaySignature: signature,
+            ),
+          );
         } else {
           completer.complete(null);
         }
       });
 
       // Razorpay instance banao aur open karo
-      final razorpay = js.JsObject(
-        js.context['Razorpay'] as js.JsFunction,
-        [options],
-      );
+      final razorpay = js.JsObject(js.context['Razorpay'] as js.JsFunction, [
+        options,
+      ]);
 
       razorpay.callMethod('on', [
         'payment.failed',

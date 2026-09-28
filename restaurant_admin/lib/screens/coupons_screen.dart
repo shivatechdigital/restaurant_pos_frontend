@@ -36,17 +36,13 @@ class _CouponsScreenState extends State<CouponsScreen> {
         child: Row(
           children: [
             if (isDesktop)
-              Container(
-                width: 220,
-                color: const Color(0xFF1E1E1E),
-                child: const AppSidebar(activeLabel: 'Offers & Promotions'),
-              ),
+              const CollapsibleSidebar(activeLabel: 'Offers & Promotions'),
             Expanded(
               child: Column(
                 children: [
                   AdminTopBar(
                     isMobile: isMobile,
-                    onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                    onMenuPressed: !isDesktop ? () => Scaffold.of(context).openDrawer() : null,
                     title: 'Coupons & Offers',
                   ),
                   Expanded(

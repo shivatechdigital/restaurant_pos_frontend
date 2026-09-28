@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+
 import 'api_config.dart';
 
 class SocketService {

@@ -115,17 +115,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (isDesktop)
-              Container(
-                width: 220,
-                color: const Color(0xFF1E1E1E),
-                child: AppSidebar(activeLabel: 'Orders'),
-              ),
+              const CollapsibleSidebar(activeLabel: 'Orders'),
             Expanded(
               child: Column(
                 children: [
                   AdminTopBar(
                     isMobile: isMobile,
-                    onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                    onMenuPressed: !isDesktop ? () => Scaffold.of(context).openDrawer() : null,
                     title: 'Orders',
                   ),
                   Expanded(
@@ -408,6 +404,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     DataColumn(label: Text('Items', style: _h)),
                     DataColumn(label: Text('Amount', style: _h)),
                     DataColumn(label: Text('Status', style: _h)),
+                    DataColumn(label: Text('Payment', style: _h)),
                     DataColumn(label: Text('Time', style: _h)),
                     DataColumn(label: Text('Actions', style: _h)),
                   ],
@@ -488,6 +485,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         ),
         DataCell(_statusChip(status)),
+        DataCell(_paymentChip(o)),
         DataCell(
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -522,6 +520,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _paymentChip(dynamic order) {
+    final paymentStatus = order['payment_status']?.toString();
+    final paymentMethod = order['payment_method']?.toString();
+    final isPaid = paymentStatus == 'success';
+    final isCash = paymentMethod == 'cash';
+    final isOffPremise = order['order_type'] == 'takeaway' || order['order_type'] == 'delivery';
+
+    final label = isPaid
+        ? (isCash ? 'CASH RECEIVED' : 'PAID ONLINE')
+      : (isCash ? 'CASH PENDING' : (paymentStatus == 'pending' ? 'ONLINE PENDING' : (isOffPremise ? 'PAYMENT PENDING' : 'UNPAID')));
+    final color = isPaid
+        ? const Color(0xFF2E7D32)
+      : (isCash ? const Color(0xFFE67E22) : Colors.grey.shade700);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700),
+      ),
     );
   }
 

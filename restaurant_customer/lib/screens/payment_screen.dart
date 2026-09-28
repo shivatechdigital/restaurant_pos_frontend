@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/order_provider.dart';
 import 'thank_you_screen.dart';
+import '../config/responsive.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String sessionId;
@@ -33,10 +35,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final bill = order.bill;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F7F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF191919),
         title: const Text('Payment'),
         centerTitle: true,
       ),
@@ -51,57 +53,68 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ],
               ),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ---- HEADER ----
-                  Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.green[50],
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.receipt_long,
-                              size: 40, color: Color(0xFF1B5E20)),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Table ${widget.tableNumber}',
-                          style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
-                        const Text(
-                          'Bill Summary',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ---- ITEMS LIST ----
-                  Card(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
+          : CustomerPage(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ---- HEADER ----
+                    Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Items Ordered',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green[50],
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.receipt_long,
+                              size: 40,
+                              color: Color(0xFF1B5E20),
+                            ),
                           ),
                           const SizedBox(height: 12),
-                          ...bill.items.map((item) => Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 6),
+                          Text(
+                            'Table ${widget.tableNumber}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Text(
+                            'Bill Summary',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ---- ITEMS LIST ----
+                    Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Items Ordered',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...bill.items.map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
                                 child: Row(
                                   children: [
                                     Expanded(
@@ -113,101 +126,124 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     Text(
                                       '₹${item.totalPrice.toStringAsFixed(2)}',
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              )),
-                          const Divider(height: 24, thickness: 1.5),
-
-                          // ---- BILL BREAKDOWN ----
-                          _billRow('Subtotal', bill.subtotal),
-                          _billRow('CGST (2.5%)', bill.cgst),
-                          _billRow('SGST (2.5%)', bill.sgst),
-                          _billRow('Service Charge', bill.serviceCharge),
-                          const Divider(height: 20, thickness: 2),
-                          _billRow('TOTAL', bill.finalAmount,
-                              isBold: true, isGreen: true),
-                          if (bill.paidAmount > 0)
-                            _billRow('Paid', bill.paidAmount),
-                          if (bill.outstandingAmount > 0)
-                            _billRow('Balance', bill.outstandingAmount,
-                                isBold: true, isGreen: true),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ---- PAYMENT OPTIONS ----
-                  const Text(
-                    'Choose Payment Method',
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // UPI Payment
-                  _paymentCard(
-                    icon: Icons.qr_code_2,
-                    title: 'Pay via UPI',
-                    subtitle: 'GPay, PhonePe, Paytm, BHIM',
-                    color: Colors.blue,
-                    tag: 'Recommended',
-                    onTap: () => _processUpi(context, order, bill.outstandingAmount),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Card Payment
-                  _paymentCard(
-                    icon: Icons.credit_card,
-                    title: 'Pay via Card',
-                    subtitle: 'Debit / Credit Card',
-                    color: Colors.purple,
-                    tag: null,
-                    onTap: () => _processUpi(context, order, bill.outstandingAmount),
-                    // Razorpay card option bhi same checkout se hota hai
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Cash Payment
-                  _paymentCard(
-                    icon: Icons.money,
-                    title: 'Pay Cash',
-                    subtitle: 'Waiter ko cash do table par',
-                    color: Colors.green,
-                    tag: null,
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Waiter cash amount record karega. Remaining balance yahin update hoga.')),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Error Message
-                  if (order.paymentError.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.error, color: Colors.red, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              order.paymentError,
-                              style: const TextStyle(color: Colors.red),
+                              ),
                             ),
-                          ),
-                        ],
+                            const Divider(height: 24, thickness: 1.5),
+
+                            // ---- BILL BREAKDOWN ----
+                            _billRow('Subtotal', bill.subtotal),
+                            _billRow('CGST (2.5%)', bill.cgst),
+                            _billRow('SGST (2.5%)', bill.sgst),
+                            _billRow('Service Charge', bill.serviceCharge),
+                            const Divider(height: 20, thickness: 2),
+                            _billRow(
+                              'TOTAL',
+                              bill.finalAmount,
+                              isBold: true,
+                              isGreen: true,
+                            ),
+                            if (bill.paidAmount > 0)
+                              _billRow('Paid', bill.paidAmount),
+                            if (bill.outstandingAmount > 0)
+                              _billRow(
+                                'Balance',
+                                bill.outstandingAmount,
+                                isBold: true,
+                                isGreen: true,
+                              ),
+                          ],
+                        ),
                       ),
                     ),
-                ],
+                    const SizedBox(height: 24),
+
+                    // ---- PAYMENT OPTIONS ----
+                    const Text(
+                      'Choose Payment Method',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // UPI Payment
+                    _paymentCard(
+                      icon: Icons.qr_code_2,
+                      title: 'Pay via UPI',
+                      subtitle: 'GPay, PhonePe, Paytm, BHIM',
+                      color: Colors.blue,
+                      tag: 'Recommended',
+                      onTap: () =>
+                          _processUpi(context, order, bill.outstandingAmount),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Card Payment
+                    _paymentCard(
+                      icon: Icons.credit_card,
+                      title: 'Pay via Card',
+                      subtitle: 'Debit / Credit Card',
+                      color: Colors.purple,
+                      tag: null,
+                      onTap: () =>
+                          _processUpi(context, order, bill.outstandingAmount),
+                      // Razorpay card option bhi same checkout se hota hai
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Cash Payment
+                    _paymentCard(
+                      icon: Icons.money,
+                      title: 'Pay Cash',
+                      subtitle: 'Waiter ko cash do table par',
+                      color: Colors.green,
+                      tag: null,
+                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Waiter cash amount record karega. Remaining balance yahin update hoga.',
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Error Message
+                    if (order.paymentError.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                order.paymentError,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
     );
@@ -250,13 +286,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         Text(
                           title,
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                         if (tag != null) ...[
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: color.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
@@ -264,9 +304,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             child: Text(
                               tag,
                               style: TextStyle(
-                                  color: color,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold),
+                                color: color,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
@@ -274,14 +315,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                     Text(
                       subtitle,
-                      style:
-                          TextStyle(color: Colors.grey[500], fontSize: 13),
+                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios,
-                  size: 16, color: Colors.grey[400]),
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
             ],
           ),
         ),
@@ -290,8 +329,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   // ---- BILL ROW ----
-  Widget _billRow(String label, double amount,
-      {bool isBold = false, bool isGreen = false}) {
+  Widget _billRow(
+    String label,
+    double amount, {
+    bool isBold = false,
+    bool isGreen = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -324,7 +367,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   // ---- UPI PAYMENT HANDLER ----
   Future<void> _processUpi(
-      BuildContext context, OrderProvider order, double amount) async {
+    BuildContext context,
+    OrderProvider order,
+    double amount,
+  ) async {
     // Confirmation dialog
     final confirmed = await _showConfirmDialog(
       context,
@@ -347,7 +393,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final settled = order.bill?.outstandingAmount == 0;
       if (!settled) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Partial payment received. Remaining balance is shown above.')),
+          const SnackBar(
+            content: Text(
+              'Partial payment received. Remaining balance is shown above.',
+            ),
+          ),
         );
         return;
       }
@@ -376,8 +426,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             Icon(icon, color: color),
@@ -394,8 +443,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: color),
-            child: const Text('Confirm & Pay',
-                style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Confirm & Pay',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

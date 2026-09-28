@@ -24,6 +24,7 @@ class ApiConfig {
   static const String uploadMenuImage = '$baseUrl/menu/upload-image';
   // Domain origin without the /api suffix, used to resolve relative image URLs.
   static String get serverOrigin => baseUrl.replaceAll('/api', '');
+  static String get customerAppUrl => '$serverOrigin/customer/';
 
   // Tables
   static const String tables = '$baseUrl/tables/all';

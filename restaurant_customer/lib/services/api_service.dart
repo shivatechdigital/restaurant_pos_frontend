@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../config/api_config.dart';
 
 class ApiService {
@@ -60,7 +62,10 @@ class ApiService {
   // ---- TABLE ----
 
   Future<Map<String, dynamic>> scanTable(
-      String tableNumber, String restaurantId, String phone) async {
+    String tableNumber,
+    String restaurantId,
+    String phone,
+  ) async {
     final res = await http.get(
       Uri.parse(ApiConfig.scanTable(tableNumber, restaurantId, phone)),
       headers: await _headers(auth: false),
@@ -69,15 +74,14 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> lockTable(
-      int tableId, String phone, String otp) async {
+    int tableId,
+    String phone,
+    String otp,
+  ) async {
     final res = await http.post(
       Uri.parse(ApiConfig.lockTable),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'table_id': tableId,
-        'phone': phone,
-        'otp': otp,
-      }),
+      body: jsonEncode({'table_id': tableId, 'phone': phone, 'otp': otp}),
     );
     return jsonDecode(res.body);
   }
@@ -93,10 +97,13 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> searchMenu(
-      String restaurantId, String keyword) async {
+    String restaurantId,
+    String keyword,
+  ) async {
     final res = await http.get(
       Uri.parse(
-          '${ApiConfig.baseUrl}/menu/search?restaurant_id=$restaurantId&keyword=$keyword'),
+        '${ApiConfig.baseUrl}/menu/search?restaurant_id=$restaurantId&keyword=$keyword',
+      ),
       headers: await _headers(auth: false),
     );
     return _decode(res);
@@ -132,6 +139,7 @@ class ApiService {
   Future<Map<String, dynamic>> placeOffPremiseOrder({
     required int restaurantId,
     required String orderType,
+    required String paymentMode,
     required List<Map<String, dynamic>> items,
     required String phone,
     String? deliveryAddress,
@@ -144,6 +152,7 @@ class ApiService {
       body: jsonEncode({
         'restaurant_id': restaurantId,
         'order_type': orderType,
+        'payment_mode': paymentMode,
         'phone': phone,
         'items': items,
         'delivery_address': deliveryAddress,
@@ -189,7 +198,9 @@ class ApiService {
   // ---- PAYMENTS ----
 
   Future<Map<String, dynamic>> createPayment(
-      String sessionId, double amount) async {
+    String sessionId,
+    double amount,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/payments/create'),
       headers: await _headers(),
@@ -222,14 +233,13 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> cashPayment(
-      String sessionId, double amount) async {
+    String sessionId,
+    double amount,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/payments/cash'),
       headers: await _headers(),
-      body: jsonEncode({
-        'session_id': int.parse(sessionId),
-        'amount': amount,
-      }),
+      body: jsonEncode({'session_id': int.parse(sessionId), 'amount': amount}),
     );
     return _decode(res);
   }

@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/cart_model.dart';
 import '../models/menu_model.dart';
 
@@ -32,14 +34,16 @@ class CartProvider extends ChangeNotifier {
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
-        _prefsKey, jsonEncode(_items.map((i) => i.toJson()).toList()));
+      _prefsKey,
+      jsonEncode(_items.map((i) => i.toJson()).toList()),
+    );
   }
 
   // ---- PRICE CALCULATIONS ----
 
   double get subtotal => _items.fold(0, (sum, item) => sum + item.itemTotal);
-  double get gst => subtotal * 0.05;           // 5% GST
-  double get serviceCharge => subtotal * 0.05;  // 5% Service
+  double get gst => subtotal * 0.05; // 5% GST
+  double get serviceCharge => subtotal * 0.05; // 5% Service
   double get totalAmount => subtotal + gst + serviceCharge;
 
   // ---- CART OPERATIONS ----
@@ -61,8 +65,9 @@ class CartProvider extends ChangeNotifier {
     );
 
     // Check karo same item + same config pehle se hai kya
-    final existingIdx =
-        _items.indexWhere((i) => i.uniqueKey == newItem.uniqueKey);
+    final existingIdx = _items.indexWhere(
+      (i) => i.uniqueKey == newItem.uniqueKey,
+    );
 
     if (existingIdx >= 0) {
       _items[existingIdx].quantity++;
@@ -102,6 +107,13 @@ class CartProvider extends ChangeNotifier {
       notifyListeners();
       _persist();
     }
+  }
+
+  void updateInstructions(int index, String instructions) {
+    if (index < 0 || index >= _items.length) return;
+    _items[index].specialInstructions = instructions;
+    notifyListeners();
+    _persist();
   }
 
   // Cart khaali karo

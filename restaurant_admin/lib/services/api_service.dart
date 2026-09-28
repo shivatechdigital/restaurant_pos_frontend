@@ -373,6 +373,14 @@ class ApiService {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> getPaymentStatus(int sessionId) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/payments/status/$sessionId'),
+      headers: await _headers(),
+    );
+    return _decode(res);
+  }
+
   // ---- POS ----
 
   Future<Map<String, dynamic>> createPosOrder(Map<String, dynamic> body) async {

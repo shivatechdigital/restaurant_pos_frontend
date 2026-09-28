@@ -6,7 +6,7 @@ class CartItem {
   final String? imageUrl;
   int quantity;
   final List<SelectedModifier> modifiers;
-  final String specialInstructions;
+  String specialInstructions;
 
   CartItem({
     required this.menuItemId,
@@ -32,15 +32,15 @@ class CartItem {
   }
 
   Map<String, dynamic> toJson() => {
-        'menu_item_id': menuItemId,
-        'name': name,
-        'unit_price': unitPrice,
-        'is_veg': isVeg,
-        'image_url': imageUrl,
-        'quantity': quantity,
-        'modifiers': modifiers.map((m) => m.toJson()).toList(),
-        'special_instructions': specialInstructions,
-      };
+    'menu_item_id': menuItemId,
+    'name': name,
+    'unit_price': unitPrice,
+    'is_veg': isVeg,
+    'image_url': imageUrl,
+    'quantity': quantity,
+    'modifiers': modifiers.map((m) => m.toJson()).toList(),
+    'special_instructions': specialInstructions,
+  };
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
@@ -50,7 +50,8 @@ class CartItem {
       isVeg: json['is_veg'] ?? true,
       imageUrl: json['image_url'],
       quantity: json['quantity'] ?? 1,
-      modifiers: (json['modifiers'] as List?)
+      modifiers:
+          (json['modifiers'] as List?)
               ?.map((m) => SelectedModifier.fromJson(m))
               .toList() ??
           [],
@@ -64,11 +65,7 @@ class SelectedModifier {
   final String name;
   final double price;
 
-  SelectedModifier({
-    required this.id,
-    required this.name,
-    required this.price,
-  });
+  SelectedModifier({required this.id, required this.name, required this.price});
 
   Map<String, dynamic> toJson() => {'id': id, 'name': name, 'price': price};
 

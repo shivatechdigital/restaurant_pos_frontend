@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/order_provider.dart';
 import '../models/order_model.dart';
 import '../widgets/order_status_stepper.dart';
 import 'payment_screen.dart';
+import '../config/responsive.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String sessionId;
@@ -53,16 +55,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     final order = context.watch<OrderProvider>();
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F7F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF191919),
         title: Text('Table ${widget.tableNumber}'),
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
           // Order cancel button (sirf "placed" status mein)
-          if (order.customerSelfCancelEnabled && order.currentStatus == OrderStatus.placed)
+          if (order.customerSelfCancelEnabled &&
+              order.currentStatus == OrderStatus.placed)
             IconButton(
               icon: const Icon(Icons.cancel_outlined),
               tooltip: 'Cancel Order',
@@ -70,24 +73,26 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             ),
         ],
       ),
-      body: Column(
-        children: [
-          // ---- STATUS STEPPER ----
-          OrderStatusStepper(currentStatus: order.currentStatus),
+      body: CustomerPage(
+        child: Column(
+          children: [
+            // ---- STATUS STEPPER ----
+            OrderStatusStepper(currentStatus: order.currentStatus),
 
-          // ---- STATUS CARD ----
-          _buildStatusCard(order),
+            // ---- STATUS CARD ----
+            _buildStatusCard(order),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // ---- ORDER INFO ----
-          _buildOrderInfo(order),
+            // ---- ORDER INFO ----
+            _buildOrderInfo(order),
 
-          const Spacer(),
+            const Spacer(),
 
-          // ---- BOTTOM ACTIONS ----
-          _buildBottomActions(context, order),
-        ],
+            // ---- BOTTOM ACTIONS ----
+            _buildBottomActions(context, order),
+          ],
+        ),
       ),
     );
   }
@@ -187,11 +192,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             '#${order.currentOrderId ?? "---"}',
           ),
           const Divider(height: 20),
-          _infoRow(
-            Icons.table_restaurant,
-            'Table',
-            widget.tableNumber,
-          ),
+          _infoRow(Icons.table_restaurant, 'Table', widget.tableNumber),
           const Divider(height: 20),
           _infoRow(
             Icons.timer_outlined,
@@ -259,13 +260,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                         label: const Text(
                           'Add Item',
                           style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold),
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF1B5E20),
                           side: const BorderSide(color: Color(0xFF1B5E20)),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -290,13 +294,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                         label: const Text(
                           'Pay Now',
                           style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.bold),
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange[700],
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -338,7 +345,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                 backgroundColor: const Color(0xFF1B5E20),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -363,7 +371,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                     foregroundColor: const Color(0xFF1B5E20),
                     side: const BorderSide(color: Color(0xFF1B5E20)),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -388,7 +397,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                     foregroundColor: Colors.orange[700],
                     side: BorderSide(color: Colors.orange[300]!),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -435,8 +445,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child:
-                const Text('Haan, Cancel Karo', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Haan, Cancel Karo',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),

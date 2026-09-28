@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../config/api_config.dart';
 
 class ApiService {
@@ -16,7 +18,32 @@ class ApiService {
 
   Future<bool> hasSavedLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('waiter_token') != null;
+    final token = prefs.getString('waiter_token');
+    if (token == null) return false;
+    if (!_isAllowedWaiterToken(token)) {
+      await logout();
+      return false;
+    }
+    return true;
+  }
+
+  bool _isAllowedWaiterToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      final claims = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
+      if (claims is! Map<String, dynamic>) return false;
+      final role = claims['role'];
+      final expiresAt = claims['exp'];
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      return (role == 'waiter' || role == 'admin') &&
+          expiresAt is num &&
+          expiresAt > now;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<int> getSavedRestaurantId() async {
@@ -73,13 +100,19 @@ class ApiService {
       body: jsonEncode({'phone': phone, 'otp': otp}),
     );
     final data = _decode(res);
-    if (data['success'] == true && data['data']?['token'] != null) {
+    if (data['success'] == true &&
+        data['data']?['token'] is String &&
+        data['data']?['user'] is Map<String, dynamic>) {
+      final user = data['data']['user'] as Map<String, dynamic>;
+      if (user['role'] != 'waiter' && user['role'] != 'admin') {
+        await logout();
+        return data;
+      }
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('waiter_token', data['data']['token']);
       await prefs.setString('waiter_phone', phone);
-      await prefs.setString('waiter_name', data['data']['user']['name']);
-      await prefs.setInt(
-          'restaurant_id', data['data']['user']['restaurant_id'] ?? 1);
+      await prefs.setString('waiter_name', user['name']?.toString() ?? '');
+      await prefs.setInt('restaurant_id', user['restaurant_id'] ?? 1);
     }
     return data;
   }
@@ -114,10 +147,9 @@ class ApiService {
 
   Future<Map<String, dynamic>> getKitchenOrders() async {
     try {
-      final res = await http.get(
-        Uri.parse(ApiConfig.kitchenOrders),
-        headers: await _headers(),
-      ).timeout(const Duration(seconds: 15));
+      final res = await http
+          .get(Uri.parse(ApiConfig.kitchenOrders), headers: await _headers())
+          .timeout(const Duration(seconds: 15));
       return _decode(res);
     } on TimeoutException {
       return {'success': false, 'message': 'Server did not respond in time'};
@@ -135,7 +167,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> transferTable(
-      int sessionId, int targetTableId) async {
+    int sessionId,
+    int targetTableId,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/waiter/table/transfer'),
       headers: await _headers(),
@@ -148,7 +182,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> mergeTables(
-      int sourceSessionId, int targetSessionId) async {
+    int sourceSessionId,
+    int targetSessionId,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/waiter/table/merge'),
       headers: await _headers(),
@@ -161,7 +197,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> updateOrderStatus(
-      int orderId, String status) async {
+    int orderId,
+    String status,
+  ) async {
     final res = await http.patch(
       Uri.parse(ApiConfig.updateStatus(orderId)),
       headers: await _headers(),
@@ -170,7 +208,10 @@ class ApiService {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> cancelOrderManually(int orderId, String reason) async {
+  Future<Map<String, dynamic>> cancelOrderManually(
+    int orderId,
+    String reason,
+  ) async {
     final res = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/orders/$orderId/cancel/manual'),
       headers: await _headers(),
@@ -189,7 +230,10 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> cashPayment(
-      String sessionId, double amount, {String method = 'cash'}) async {
+    String sessionId,
+    double amount, {
+    String method = 'cash',
+  }) async {
     final res = await http.post(
       Uri.parse(ApiConfig.cashPayment),
       headers: await _headers(),

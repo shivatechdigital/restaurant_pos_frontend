@@ -43,17 +43,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
         child: Row(
           children: [
             if (isDesktop)
-              Container(
-                width: 220,
-                color: const Color(0xFF1E1E1E),
-                child: const AppSidebar(activeLabel: 'Reports'),
-              ),
+              const CollapsibleSidebar(activeLabel: 'Reports'),
             Expanded(
               child: Column(
                 children: [
                   AdminTopBar(
                     isMobile: isMobile,
-                    onMenuPressed: isMobile ? () => Scaffold.of(context).openDrawer() : null,
+                    onMenuPressed: !isDesktop ? () => Scaffold.of(context).openDrawer() : null,
                     title: 'Reports & GST',
                   ),
                   Expanded(
