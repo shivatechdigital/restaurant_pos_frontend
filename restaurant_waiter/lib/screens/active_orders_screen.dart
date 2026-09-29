@@ -52,12 +52,12 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
     final width = MediaQuery.sizeOf(context).width;
     final compact = width < 1100;
 
-    final all = waiter.activeOrders
+    final all = _groupOrders(waiter.activeOrders)
         .where(
           (order) =>
               _query.isEmpty ||
               order.tableNumber.toLowerCase().contains(_query) ||
-              '#${order.orderId}'.contains(_query),
+              order.orderIds.any((id) => '#$id'.contains(_query)),
         )
         .toList();
     final active = all.where((o) => o.isActive).toList();
@@ -175,6 +175,63 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
     if (active.isEmpty) return '0m';
     final total = active.fold<int>(0, (sum, o) => sum + o.minutesAgo);
     return '${(total / active.length).round()}m';
+  }
+
+  List<WaiterOrder> _groupOrders(List<WaiterOrder> orders) {
+    final groups = <String, List<WaiterOrder>>{};
+    for (final order in orders) {
+      final key = order.sessionId == null
+          ? 'order:${order.orderId}'
+          : 'session:${order.sessionId}';
+      groups.putIfAbsent(key, () => []).add(order);
+    }
+
+    return groups.values.map((group) {
+      group.sort((a, b) => a.placedAt.compareTo(b.placedAt));
+      final latest = group.last;
+      final activeOrders = group.where((order) => order.isActive).toList();
+      final status = activeOrders.isNotEmpty
+          ? activeOrders.last.status
+          : group.every((order) => order.isServed)
+          ? 'served'
+          : group.last.status;
+      final itemTotals = <String, WaiterOrderItem>{};
+      for (final order in group) {
+        for (final item in order.items) {
+          final key = '${item.name}\u0000${item.status}';
+          final previous = itemTotals[key];
+          itemTotals[key] = WaiterOrderItem(
+            name: item.name,
+            quantity: (previous?.quantity ?? 0) + item.quantity,
+            totalPrice: (previous?.totalPrice ?? 0) + item.totalPrice,
+            status: item.status,
+          );
+        }
+      }
+      return WaiterOrder(
+        orderId: latest.orderId,
+        orderIds: (activeOrders.isEmpty ? group : activeOrders)
+            .map((order) => order.orderId)
+            .toList(),
+        sessionId: latest.sessionId,
+        tableId: latest.tableId,
+        tableNumber: latest.tableNumber,
+        status: status,
+        customerName: latest.customerName,
+        customerPhone: latest.customerPhone,
+        totalAmount: group.fold(0, (sum, order) => sum + order.totalAmount),
+        placedAt: group.first.placedAt,
+        minutesAgo: group
+            .map((order) => order.minutesAgo)
+            .fold(0, (a, b) => a > b ? a : b),
+        notes: group
+            .map((order) => order.notes)
+            .whereType<String>()
+            .where((note) => note.isNotEmpty)
+            .join('\n'),
+        items: itemTotals.values.toList(),
+      );
+    }).toList()..sort((a, b) => a.tableNumber.compareTo(b.tableNumber));
   }
 
   Widget _errorState(WaiterProvider waiter) {
@@ -670,10 +727,13 @@ class _ActiveOrdersScreenState extends State<ActiveOrdersScreen> {
   Future<void> _markServed(WaiterOrder order) async {
     if (!await confirmServeIfNeeded(context, 'Order #${order.orderId}')) return;
     if (!mounted) return;
-    final ok = await context.read<WaiterProvider>().updateOrderStatus(
-      order.orderId,
-      'served',
-    );
+    final waiter = context.read<WaiterProvider>();
+    var ok = true;
+    for (final orderId
+        in order.orderIds.isEmpty ? [order.orderId] : order.orderIds) {
+      if (!await waiter.updateOrderStatus(orderId, 'served')) ok = false;
+    }
+    await waiter.loadActiveOrders();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

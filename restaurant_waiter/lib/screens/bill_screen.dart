@@ -533,7 +533,6 @@ class _BillScreenState extends State<BillScreen> {
         ),
       );
       Navigator.pop(context); // Bill screen close
-      Navigator.pop(context); // Orders screen par wapas
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

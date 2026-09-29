@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/kitchen_provider.dart';
 
 class KitchenStatsScreen extends StatefulWidget {
@@ -32,8 +33,7 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
         title: const Text('📊 Kitchen Stats'),
       ),
       body: stats == null
-          ? const Center(
-              child: CircularProgressIndicator(color: Colors.white))
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -42,8 +42,7 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
                   // Date
                   Text(
                     '📅 ${stats['date']}',
-                    style: const TextStyle(
-                        color: Colors.white70, fontSize: 16),
+                    style: const TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                   const SizedBox(height: 16),
 
@@ -61,10 +60,10 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: _statCard(
-                          'Revenue',
-                          '₹${(stats['total_revenue'] as num?)?.toStringAsFixed(0) ?? '0'}',
-                          Icons.currency_rupee,
-                          Colors.green,
+                          'Avg Prep Time',
+                          '${stats['avg_prep_time']?['avg_minutes'] ?? 0} min',
+                          Icons.timer,
+                          Colors.orange,
                         ),
                       ),
                     ],
@@ -74,21 +73,13 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
                     children: [
                       Expanded(
                         child: _statCard(
-                          'Avg Prep Time',
-                          '${stats['avg_prep_time']?['avg_minutes'] ?? 0} min',
-                          Icons.timer,
-                          Colors.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _statCard(
                           'Late Orders',
                           '${stats['late_orders'] ?? 0}',
                           Icons.warning,
                           Colors.red,
                         ),
                       ),
+                      const Spacer(),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -141,44 +132,51 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
-                        children: (stats['top_items'] as List?)
-                                ?.asMap()
-                                .entries
-                                .map((entry) {
+                        children:
+                            (stats['top_items'] as List?)?.asMap().entries.map((
+                              entry,
+                            ) {
                               final index = entry.key;
                               final item = entry.value;
                               final medals = ['🥇', '🥈', '🥉', '4.', '5.'];
                               return Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
                                 child: Row(
                                   children: [
-                                    Text(medals[index],
-                                        style:
-                                            const TextStyle(fontSize: 16)),
+                                    Text(
+                                      medals[index],
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         item['name'] ?? '',
                                         style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14),
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
                                       ),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 3),
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: Colors.green.withValues(alpha: 0.2),
-                                        borderRadius:
-                                            BorderRadius.circular(6),
+                                        color: Colors.green.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
                                         '${item['quantity']} sold',
                                         style: const TextStyle(
-                                            color: Colors.green,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12),
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -186,8 +184,10 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
                               );
                             }).toList() ??
                             [
-                              const Text('No data yet',
-                                  style: TextStyle(color: Colors.grey))
+                              const Text(
+                                'No data yet',
+                                style: TextStyle(color: Colors.grey),
+                              ),
                             ],
                       ),
                     ),
@@ -198,8 +198,7 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
     );
   }
 
-  Widget _statCard(
-      String label, String value, IconData icon, Color color) {
+  Widget _statCard(String label, String value, IconData icon, Color color) {
     return Card(
       color: Colors.grey[850],
       child: Padding(
@@ -230,12 +229,16 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
   Widget _prepTimeItem(String label, String value, Color color) {
     return Column(
       children: [
-        Text(value,
-            style: TextStyle(
-                color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(label,
-            style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+        Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
       ],
     );
   }
@@ -272,8 +275,7 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
         children: hourlyData.map((h) {
           final hour = h['hour'] as int;
           final orders = h['orders'] as int;
-          final heightPercent =
-              maxOrders > 0 ? (orders / maxOrders) : 0.0;
+          final heightPercent = maxOrders > 0 ? (orders / maxOrders) : 0.0;
 
           return Expanded(
             child: Padding(
@@ -281,26 +283,25 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('$orders',
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 10)),
+                  Text(
+                    '$orders',
+                    style: const TextStyle(color: Colors.white, fontSize: 10),
+                  ),
                   const SizedBox(height: 4),
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 500),
                     height: heightPercent * 70 + 5,
                     decoration: BoxDecoration(
-                      color: orders == maxOrders
-                          ? Colors.red
-                          : Colors.orange,
+                      color: orders == maxOrders ? Colors.red : Colors.orange,
                       borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4)),
+                        top: Radius.circular(4),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${hour}h',
-                    style: TextStyle(
-                        color: Colors.grey[500], fontSize: 9),
+                    style: TextStyle(color: Colors.grey[500], fontSize: 9),
                   ),
                 ],
               ),
@@ -312,6 +313,8 @@ class _KitchenStatsScreenState extends State<KitchenStatsScreen> {
   }
 
   int _getTotalOrders(Map<String, dynamic> stats) {
+    final total = stats['total_orders'];
+    if (total is num) return total.toInt();
     final counts = stats['status_counts'] as List? ?? [];
     return counts.fold(0, (sum, c) {
       final count = c['count'];

@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/kitchen_order_model.dart';
 import '../models/waiter_request_model.dart';
 import '../services/api_service.dart';
@@ -41,9 +43,12 @@ class KitchenProvider extends ChangeNotifier {
   Map<String, dynamic>? get stats => _stats;
 
   // Stats
-  int get newOrders => _orders.where((o) => o.status == 'placed').length;
-  int get preparingOrders =>
-      _orders.where((o) => o.status == 'accepted' || o.status == 'preparing').length;
+  int get newOrders => _orders
+      .where((o) => o.status == 'placed' || o.status == 'pending')
+      .length;
+  int get preparingOrders => _orders
+      .where((o) => o.status == 'accepted' || o.status == 'preparing')
+      .length;
   int get readyOrders => _orders.where((o) => o.status == 'ready').length;
   int get urgentOrders => _orders.where((o) => o.isUrgent).length;
   int get totalActive => _orders.length;
@@ -97,14 +102,13 @@ class KitchenProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _api.getKitchenOrders(
-        status: _filterStatus.isEmpty ? null : _filterStatus,
-        includeServed: _filterStatus.isEmpty,
-      );
+      final result = await _api.getKitchenOrders(includeServed: true);
 
       if (result['success'] == true) {
         final ordersList = result['data']['orders'] as List;
-        final newOrders = ordersList.map((o) => KitchenOrder.fromJson(o)).toList();
+        final newOrders = ordersList
+            .map((o) => KitchenOrder.fromJson(o))
+            .toList();
 
         // Naye orders detect karo (sound ke liye)
         if (!isSocketRefresh) {
@@ -147,10 +151,11 @@ class KitchenProvider extends ChangeNotifier {
         'accepted': 1,
         'preparing': 2,
         'ready': 3,
-        'served': 4
+        'served': 4,
       };
-      final statusCompare = (statusOrder[a.status] ?? 5)
-          .compareTo(statusOrder[b.status] ?? 5);
+      final statusCompare = (statusOrder[a.status] ?? 5).compareTo(
+        statusOrder[b.status] ?? 5,
+      );
       if (statusCompare != 0) return statusCompare;
       // Same status mein purana order pehle
       return a.placedAt.compareTo(b.placedAt);
@@ -181,8 +186,9 @@ class KitchenProvider extends ChangeNotifier {
             orderedByPhone: old.orderedByPhone,
             notes: old.notes,
             placedAt: old.placedAt,
-            acceptedAt:
-                newStatus == 'accepted' ? DateTime.now() : old.acceptedAt,
+            acceptedAt: newStatus == 'accepted'
+                ? DateTime.now()
+                : old.acceptedAt,
             servedAt: old.servedAt,
             minutesAgo: old.minutesAgo,
             totalAmount: old.totalAmount,
@@ -290,8 +296,7 @@ class KitchenProvider extends ChangeNotifier {
 
   void _startUrgentChecker() {
     _urgentCheckTimer?.cancel();
-    _urgentCheckTimer =
-        Timer.periodic(const Duration(seconds: 30), (_) {
+    _urgentCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       bool hasUrgent = _orders.any((o) => o.isVeryUrgent);
       if (hasUrgent) {
         _sound.playUrgentAlert();

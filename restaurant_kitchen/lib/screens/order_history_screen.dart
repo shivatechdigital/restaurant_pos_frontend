@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 
 class KitchenHistoryScreen extends StatefulWidget {
@@ -13,6 +14,7 @@ class _KitchenHistoryScreenState extends State<KitchenHistoryScreen> {
   List<dynamic> _orders = [];
   bool _isLoading = true;
   String _filterStatus = '';
+  String _error = '';
 
   @override
   void initState() {
@@ -21,19 +23,28 @@ class _KitchenHistoryScreenState extends State<KitchenHistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _error = '';
+    });
     try {
       final result = await _api.getKitchenHistory(
         status: _filterStatus.isEmpty ? null : _filterStatus,
       );
-      if (result['success'] == true) {
-        setState(() {
-          _orders = result['data']['orders'] ?? [];
-          _isLoading = false;
-        });
-      }
+      if (!mounted) return;
+      setState(() {
+        _orders = result['success'] == true
+            ? List<dynamic>.from(result['data']?['orders'] ?? const [])
+            : [];
+        _error = result['success'] == true
+            ? ''
+            : result['message']?.toString() ?? 'History load nahi hui';
+      });
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() => _error = 'Network error. Retry karein.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -65,20 +76,41 @@ class _KitchenHistoryScreenState extends State<KitchenHistoryScreen> {
           Expanded(
             child: _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(color: Colors.white))
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                : _error.isNotEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _error,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: _loadHistory,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  )
                 : _orders.isEmpty
-                    ? const Center(
-                        child: Text('Koi history nahi mili',
-                            style: TextStyle(color: Colors.grey)),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(8),
-                        itemCount: _orders.length,
-                        itemBuilder: (context, index) {
-                          final order = _orders[index];
-                          return _historyCard(order);
-                        },
-                      ),
+                ? const Center(
+                    child: Text(
+                      'Koi history nahi mili',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: _orders.length,
+                    itemBuilder: (context, index) {
+                      final order = _orders[index];
+                      return _historyCard(order);
+                    },
+                  ),
           ),
         ],
       ),
@@ -107,8 +139,10 @@ class _KitchenHistoryScreenState extends State<KitchenHistoryScreen> {
 
   Widget _historyCard(Map<String, dynamic> order) {
     final isServed = order['status'] == 'served';
+    final isCancelled = order['status'] == 'cancelled';
     final items = order['items'] as List? ?? [];
-    final date = DateTime.tryParse(order['placed_at'] ?? '');
+    final date = DateTime.tryParse(order['placed_at']?.toString() ?? '')
+        ?.toLocal();
     final timeStr = date != null
         ? '${date.hour}:${date.minute.toString().padLeft(2, '0')}'
         : '--:--';
@@ -122,8 +156,16 @@ class _KitchenHistoryScreenState extends State<KitchenHistoryScreen> {
           children: [
             // Status icon
             Icon(
-              isServed ? Icons.check_circle : Icons.cancel,
-              color: isServed ? Colors.green : Colors.red,
+              isServed
+                  ? Icons.check_circle
+                  : isCancelled
+                  ? Icons.cancel
+                  : Icons.receipt,
+              color: isServed
+                  ? Colors.green
+                  : isCancelled
+                  ? Colors.red
+                  : Colors.orange,
               size: 28,
             ),
             const SizedBox(width: 12),
@@ -138,22 +180,35 @@ class _KitchenHistoryScreenState extends State<KitchenHistoryScreen> {
                       Text(
                         '#${order['id']} • ${order['table_number']}',
                         style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14),
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(width: 8),
-                      Text(timeStr,
-                          style: TextStyle(
-                              color: Colors.grey[500], fontSize: 12)),
+                      Text(
+                        timeStr,
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
+                  if ((order['waiter_name'] ?? '').toString().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        'Waiter: ${order['waiter_name']}',
+                        style: TextStyle(
+                          color: Colors.blueGrey[200],
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
                   Text(
                     items.length <= 2
                         ? items
-                            .map((i) => '${i['name']} ×${i['qty']}')
-                            .join(', ')
+                              .map((i) => '${i['name']} ×${i['qty']}')
+                              .join(', ')
                         : '${items.take(2).map((i) => i['name']).join(', ')} +${items.length - 2}',
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     maxLines: 1,
@@ -170,9 +225,10 @@ class _KitchenHistoryScreenState extends State<KitchenHistoryScreen> {
                 Text(
                   '₹${(order['amount'] as num?)?.toStringAsFixed(0) ?? '0'}',
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 if (order['prep_time'] != null)
                   Text(

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../config/socket_service.dart';
 import '../services/api_service.dart';
 
 class AuthProvider extends ChangeNotifier {
@@ -10,6 +13,19 @@ class AuthProvider extends ChangeNotifier {
   bool isLoggedIn = false;
   int restaurantId = 1;
   String? testOtp;
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('kitchen_token');
+    await prefs.remove('kitchen_phone');
+    await prefs.remove('kitchen_role');
+    await prefs.remove('kitchen_restaurant_id');
+    SocketService().disconnect();
+    isLoggedIn = false;
+    phone = '';
+    restaurantId = 1;
+    notifyListeners();
+  }
 
   Future<bool> sendOtp(String phoneNumber) async {
     isLoading = true;

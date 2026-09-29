@@ -11,6 +11,7 @@ int _parseInt(dynamic value, {int fallback = 0}) {
 
 class WaiterOrder {
   final int orderId;
+  final List<int> orderIds;
   final int? sessionId;
   final int tableId;
   final String tableNumber;
@@ -25,6 +26,7 @@ class WaiterOrder {
 
   WaiterOrder({
     required this.orderId,
+    this.orderIds = const [],
     this.sessionId,
     required this.tableId,
     required this.tableNumber,
@@ -41,6 +43,7 @@ class WaiterOrder {
   factory WaiterOrder.fromJson(Map<String, dynamic> json) {
     return WaiterOrder(
       orderId: _parseInt(json['id']),
+      orderIds: [_parseInt(json['id'])],
       sessionId: _parseInt(json['session_id'], fallback: 0) == 0
           ? null
           : _parseInt(json['session_id']),

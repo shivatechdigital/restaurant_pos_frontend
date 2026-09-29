@@ -1019,7 +1019,7 @@ class _ReceptionTableMgmtState extends State<ReceptionTableMgmt>
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 2),
                     child: Text(
-                      '${order['customer_name'] ?? 'Customer'}  ${order['customer_phone'] ?? ''}',
+                      '${order['customer_name'] ?? 'Customer'}  ${order['customer_phone'] ?? ''}  •  Waiter: ${order['waiter_name'] ?? 'Not assigned'}',
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.blueGrey.shade600,

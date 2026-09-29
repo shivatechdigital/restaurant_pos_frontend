@@ -85,7 +85,7 @@ class WaiterProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _api.getKitchenOrders();
+      final result = await _api.getKitchenOrders(includeServed: true);
       if (result['success'] == true) {
         final rawData = result['data'];
         final ordersList = rawData is Map && rawData['orders'] is List
@@ -120,6 +120,7 @@ class WaiterProvider extends ChangeNotifier {
           final old = _activeOrders[idx];
           _activeOrders[idx] = WaiterOrder(
             orderId: old.orderId,
+            orderIds: old.orderIds,
             sessionId: old.sessionId,
             tableId: old.tableId,
             tableNumber: old.tableNumber,

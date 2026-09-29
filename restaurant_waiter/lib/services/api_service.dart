@@ -145,10 +145,15 @@ class ApiService {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> getKitchenOrders() async {
+  Future<Map<String, dynamic>> getKitchenOrders({
+    bool includeServed = false,
+  }) async {
     try {
+      final uri = Uri.parse(ApiConfig.kitchenOrders).replace(
+        queryParameters: includeServed ? {'include_served': 'true'} : null,
+      );
       final res = await http
-          .get(Uri.parse(ApiConfig.kitchenOrders), headers: await _headers())
+          .get(uri, headers: await _headers())
           .timeout(const Duration(seconds: 15));
       return _decode(res);
     } on TimeoutException {
