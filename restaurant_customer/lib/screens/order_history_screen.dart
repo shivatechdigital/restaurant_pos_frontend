@@ -44,18 +44,67 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     final orders = order.orderHistory;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F7F5),
+      backgroundColor: const Color(0xFFF9F9FB),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF191919),
-        title: Text('Table ${widget.tableNumber} - Order History'),
-        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: Color(0xFF1E2022),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const Text(
+          'My Orders',
+          style: TextStyle(
+            color: Color(0xFF1E2022),
+            fontWeight: FontWeight.w800,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: false,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF2EB),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.table_restaurant_rounded,
+                  size: 14,
+                  color: Color(0xFFF45B15),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Table ${widget.tableNumber}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFF45B15),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFECECEC), height: 1),
+        ),
       ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFFF45B15)),
             )
           : CustomerPage(
+              maxWidth: 640,
               child: Column(
                 children: [
                   if (widget.roomCode.isNotEmpty) _tablePinCard(),
@@ -65,114 +114,236 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.receipt_long,
-                                  size: 60,
-                                  color: Colors.grey[300],
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFFF2EB),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.receipt_long_rounded,
+                                    size: 38,
+                                    color: Color(0xFFF45B15),
+                                  ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 14),
                                 const Text(
-                                  'Abhi tak koi order nahi hai',
-                                  style: TextStyle(color: Colors.grey),
+                                  'No Orders Placed Yet',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 17,
+                                    color: Color(0xFF1E2022),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Your orders for this table will appear here',
+                                  style: TextStyle(
+                                    color: Color(0xFF75787E),
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ],
                             ),
                           )
                         : RefreshIndicator(
+                            color: const Color(0xFFF45B15),
                             onRefresh: () => context
                                 .read<OrderProvider>()
                                 .loadOrderHistory(),
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(12),
+                            child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
                               itemCount: orders.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
                               itemBuilder: (context, index) {
                                 final orderData = orders[index];
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFFECECEC),
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x08000000),
+                                        blurRadius: 12,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(14),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              'Order #${orderData.orderId}',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 15,
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Order #${orderData.orderId}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 15,
+                                                  color: Color(0xFF1E2022),
+                                                ),
                                               ),
-                                            ),
-                                            const Spacer(),
-                                            _statusBadge(orderData.status),
-                                          ],
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${orderData.items.length} items',
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFF9EA1A8),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const Spacer(),
+                                          _statusBadge(orderData.status),
+                                        ],
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 10,
                                         ),
-                                        const Divider(height: 18),
-                                        ...orderData.items.map(
-                                          (item) => Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 4,
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Text(
-                                                    '${item.quantity} x ${item.name}',
-                                                    style: const TextStyle(
-                                                      fontSize: 13,
+                                        child: Divider(
+                                          color: Color(0xFFF2F2F2),
+                                          height: 1,
+                                        ),
+                                      ),
+                                      ...orderData.items.map(
+                                        (item) => Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 5,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 7,
+                                                      vertical: 2,
                                                     ),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFFF3F4F6,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  '${item.quantity}x',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: 12,
+                                                    color: Color(0xFF374151),
                                                   ),
                                                 ),
-                                                Text(
-                                                  '₹${item.totalPrice.toStringAsFixed(0)}',
-                                                  style: TextStyle(
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  item.name,
+                                                  style: const TextStyle(
                                                     fontSize: 13,
-                                                    color: Colors.grey[700],
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0xFF1E2022),
                                                   ),
                                                 ),
-                                                IconButton(
-                                                  tooltip:
-                                                      'Reorder ${item.name}',
-                                                  onPressed: () =>
-                                                      _reorderItem(item),
-                                                  icon: const Icon(
-                                                    Icons.refresh,
-                                                    color: Color(0xFFF45B15),
-                                                  ),
+                                              ),
+                                              Text(
+                                                '₹${item.totalPrice.toStringAsFixed(0)}',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Color(0xFF1E2022),
                                                 ),
-                                              ],
-                                            ),
+                                              ),
+                                            ],
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            const Text(
-                                              'Total',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            if (orderData.totalAmount != null)
-                                              Text(
-                                                '₹${orderData.totalAmount!.toStringAsFixed(0)}',
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFFF45B15),
-                                                  fontSize: 15,
+                                      ),
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          vertical: 10,
+                                        ),
+                                        child: Divider(
+                                          color: Color(0xFFF2F2F2),
+                                          height: 1,
+                                        ),
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'Order Total',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFF75787E),
                                                 ),
                                               ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                              Text(
+                                                '₹${(orderData.totalAmount ?? 0).toStringAsFixed(0)}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w900,
+                                                  color: Color(0xFFF45B15),
+                                                  fontSize: 18,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          SizedBox(
+                                            height: 36,
+                                            child: ElevatedButton(
+                                              onPressed: () {
+                                                if (orderData
+                                                    .items
+                                                    .isNotEmpty) {
+                                                  _reorderItem(
+                                                    orderData.items.first,
+                                                  );
+                                                }
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFFF45B15,
+                                                ),
+                                                foregroundColor: Colors.white,
+                                                elevation: 0,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                    ),
+                                              ),
+                                              child: const Text(
+                                                'Reorder',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 );
                               },
@@ -187,14 +358,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       bottomNavigationBar: orders.isEmpty
           ? null
           : Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 10,
-                    offset: const Offset(0, -3),
+                    color: Color(0x0C000000),
+                    blurRadius: 16,
+                    offset: Offset(0, -4),
                   ),
                 ],
               ),
@@ -216,19 +387,20 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.payment, size: 20),
+                    icon: const Icon(Icons.receipt_long_rounded, size: 20),
                     label: const Text(
-                      'Bill / Payment',
+                      'View Bill & Pay',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[700],
+                      backgroundColor: const Color(0xFFF45B15),
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),

@@ -55,15 +55,16 @@ class CustomerResponsive extends StatelessWidget {
 
 class CustomerPage extends StatelessWidget {
   final Widget child;
+  final double? maxWidth;
 
-  const CustomerPage({super.key, required this.child});
+  const CustomerPage({super.key, required this.child, this.maxWidth});
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: CustomerResponsive.contentWidth(context),
+          maxWidth: maxWidth ?? CustomerResponsive.contentWidth(context),
         ),
         child: child,
       ),

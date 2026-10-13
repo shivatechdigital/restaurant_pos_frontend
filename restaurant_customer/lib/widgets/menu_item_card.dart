@@ -197,16 +197,24 @@ class MenuItemCard extends StatelessWidget {
   }
 
   Widget _addButton(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: () => _showCustomizeDialog(context),
-      icon: const Icon(Icons.add, size: 16),
-      label: const Text('ADD', style: TextStyle(fontSize: 13)),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFF45B15),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        elevation: 0,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF45B15),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x30F45B15),
+            blurRadius: 8,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: IconButton(
+        onPressed: () => _showCustomizeDialog(context),
+        icon: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+        padding: EdgeInsets.zero,
+        tooltip: 'Add to Cart',
       ),
     );
   }
@@ -214,13 +222,14 @@ class MenuItemCard extends StatelessWidget {
   Widget _quantityControl(BuildContext context, int qty) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF45B15),
-        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFFFFF2EB),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFFD4C2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _qtyBtn(Icons.remove, () {
+          _qtyBtn(Icons.remove_rounded, () {
             final cart = context.read<CartProvider>();
             final idx = cart.items.indexWhere((i) => i.menuItemId == item.id);
             if (idx >= 0) cart.decreaseQty(idx);
@@ -230,13 +239,13 @@ class MenuItemCard extends StatelessWidget {
             child: Text(
               '$qty',
               style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
+                color: Color(0xFFF45B15),
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
               ),
             ),
           ),
-          _qtyBtn(Icons.add, () {
+          _qtyBtn(Icons.add_rounded, () {
             final cart = context.read<CartProvider>();
             final idx = cart.items.indexWhere((i) => i.menuItemId == item.id);
             if (idx >= 0) cart.increaseQty(idx);
@@ -252,7 +261,7 @@ class MenuItemCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.all(6),
-        child: Icon(icon, color: Colors.white, size: 18),
+        child: Icon(icon, color: const Color(0xFFF45B15), size: 16),
       ),
     );
   }

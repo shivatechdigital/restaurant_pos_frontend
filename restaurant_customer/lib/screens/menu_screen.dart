@@ -68,21 +68,54 @@ class _MenuScreenState extends State<MenuScreen> {
       // ---- APP BAR ----
       appBar: AppBar(
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF191919),
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        scrolledUnderElevation: 0,
+        title: Row(
           children: [
-            const Text(
-              'Sarjapur PetPooja',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF2EB),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.restaurant_rounded,
+                color: Color(0xFFF45B15),
+                size: 20,
+              ),
             ),
-            Text(
-              'You are sitting at Table ${widget.tableNumber}',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.normal,
-                color: Color(0xFF737373),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Sarjapur PetPooja',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E2022),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        size: 12,
+                        color: Color(0xFFF45B15),
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        'Dine In  •  Table ${widget.tableNumber}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF75787E),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -90,8 +123,11 @@ class _MenuScreenState extends State<MenuScreen> {
         actions: [
           // Order History
           IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'Pichle Orders',
+            icon: const Icon(
+              Icons.receipt_long_rounded,
+              color: Color(0xFF1E2022),
+            ),
+            tooltip: 'Order History',
             onPressed: () {
               Navigator.push(
                 context,
@@ -104,7 +140,10 @@ class _MenuScreenState extends State<MenuScreen> {
           ),
           // Call Waiter
           IconButton(
-            icon: const Icon(Icons.notifications_active),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: Color(0xFF1E2022),
+            ),
             tooltip: 'Call Waiter 🛎️',
             onPressed: () {
               SocketService().emit('call_waiter', {
@@ -114,18 +153,26 @@ class _MenuScreenState extends State<MenuScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Row(
-                    children: [Text('🛎️ '), Text('Waiter ko bula liya gaya!')],
+                    children: [
+                      Text('🛎️ '),
+                      Text('Waiter ko alert bhej diya gaya hai!'),
+                    ],
                   ),
-                  backgroundColor: Colors.orange[700],
+                  backgroundColor: const Color(0xFFF45B15),
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               );
             },
           ),
+          const SizedBox(width: 4),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFECECEC), height: 1),
+        ),
       ),
 
       body: menu.isLoading
@@ -292,10 +339,10 @@ class _MenuScreenState extends State<MenuScreen> {
 
   Widget _buildCategoryRail(List<Category> categories) {
     return SizedBox(
-      height: 132,
+      height: 96,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         children: [
           _categoryTile(null, 'All', null),
           ...categories.map((category) {
@@ -315,58 +362,59 @@ class _MenuScreenState extends State<MenuScreen> {
     return GestureDetector(
       onTap: () => setState(() => _selectedCategoryId = id),
       child: Container(
-        width: 92,
         margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          color: selected ? const Color(0xFFF45B15) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: selected ? const Color(0xFFF45B15) : const Color(0xFFE6E6E6),
-            width: selected ? 2 : 1,
+            color: selected ? const Color(0xFFF45B15) : const Color(0xFFE5E7EB),
           ),
+          boxShadow: selected
+              ? const [
+                  BoxShadow(
+                    color: Color(0x35F45B15),
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
+                ]
+              : const [
+                  BoxShadow(
+                    color: Color(0x06000000),
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
         ),
-        child: Column(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(7),
-                child: imageUrl == null
-                    ? Container(
-                        width: double.infinity,
-                        color: const Color(0xFFFFE9DD),
-                        child: const Icon(
-                          Icons.restaurant_menu,
-                          color: Color(0xFFF45B15),
-                        ),
-                      )
-                    : Image.network(
-                        imageUrl,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const ColoredBox(
-                          color: Color(0xFFFFE9DD),
-                          child: Center(
-                            child: Icon(
-                              Icons.restaurant,
-                              color: Color(0xFFF45B15),
-                            ),
-                          ),
-                        ),
-                      ),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: selected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : const Color(0xFFFFF2EB),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(
+                  id == null
+                      ? Icons.grid_view_rounded
+                      : Icons.restaurant_rounded,
+                  size: 16,
+                  color: selected ? Colors.white : const Color(0xFFF45B15),
+                ),
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(width: 8),
             Text(
               name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: selected
-                    ? const Color(0xFFF45B15)
-                    : const Color(0xFF454545),
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? Colors.white : const Color(0xFF1E2022),
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
           ],
@@ -380,49 +428,95 @@ class _MenuScreenState extends State<MenuScreen> {
         .expand((category) => category.items)
         .firstOrNull;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
       child: Container(
-        height: 158,
+        height: 140,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: const Color(0xFFF45B15),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF2A211D), Color(0xFF1B1614)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1F000000),
+              blurRadius: 18,
+              offset: Offset(0, 6),
+            ),
+          ],
         ),
         child: Stack(
-          fit: StackFit.expand,
           children: [
             if (featured?.imageUrl?.isNotEmpty == true)
-              Image.network(featured!.imageUrl!, fit: BoxFit.cover),
-            Container(color: Colors.black.withValues(alpha: 0.48)),
+              Positioned(
+                right: -20,
+                top: -10,
+                bottom: -10,
+                width: 190,
+                child: Opacity(
+                  opacity: 0.85,
+                  child: Image.network(
+                    featured!.imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF1E1714),
+                    Color(0xD91E1714),
+                    Colors.transparent,
+                  ],
+                  stops: [0.0, 0.55, 1.0],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
             Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'GOOD FOOD, BETTER COMPANY',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF45B15),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      'SPECIAL DEAL',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    featured?.name ?? 'Find your next favourite',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                  const Text(
+                    'Delicious Food For\nEvery Mood',
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      height: 1.15,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   const Text(
-                    'Explore the menu, made fresh for your table.',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                    'Fresh Ingredients • Great Taste',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
                   ),
                 ],
               ),
