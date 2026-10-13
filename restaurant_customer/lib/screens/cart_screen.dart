@@ -143,265 +143,254 @@ class _CartScreenState extends State<CartScreen> {
       ),
       body: cart.isEmpty
           ? _buildEmptyCart(context)
-          : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 800, // Full responsive width
+          : SizedBox(
+              width: double.infinity,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Header: Order Items + Add More Items button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Order Items (${cart.totalItems})',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF1E2022),
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(
-                              Icons.add_circle_outline_rounded,
-                              size: 18,
-                              color: Color(0xFFF45B15),
-                            ),
-                            label: const Text(
-                              'Add More Items',
-                              style: TextStyle(
-                                color: Color(0xFFF45B15),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Cart Items List
-                      ...List.generate(cart.items.length, (index) {
-                        final item = cart.items[index];
-                        return _buildCartItemTile(context, cart, item, index);
-                      }),
-
-                      const SizedBox(height: 16),
-
-                      // Special Instructions (Combined for entire order as per Screen 03 design)
-                      const Text(
-                        'Special Instructions (Optional)',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E2022),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: _instructionsCtrl,
-                        maxLines: 2,
-                        style: const TextStyle(fontSize: 13),
-                        decoration: InputDecoration(
-                          hintText:
-                              'E.g. less spicy, no onion, extra cheese etc.',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFF9EA1A8),
-                            fontSize: 13,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFECECEC),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFFF45B15),
-                            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Header: Order Items + Add More Items button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Order Items (${cart.totalItems})',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E2022),
                           ),
                         ),
-                      ),
-
-                      // ---- OFF-PREMISE (TAKEAWAY VS DELIVERY) OPTIONS (Requirement 8 & 9) ----
-                      if (_isOffPremiseOrder) ...[
-                        const SizedBox(height: 24),
-                        _buildDeliveryTakeawaySection(),
-                      ],
-
-                      const SizedBox(height: 24),
-
-                      // Apply Coupon Section
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.percent_rounded,
-                            size: 20,
+                        TextButton.icon(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(
+                            Icons.add_circle_outline_rounded,
+                            size: 18,
                             color: Color(0xFFF45B15),
                           ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Apply Coupon',
+                          label: const Text(
+                            'Add More Items',
                             style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                              color: Color(0xFF1E2022),
+                              color: Color(0xFFF45B15),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFECECEC),
-                                ),
-                              ),
-                              child: TextField(
-                                controller: _couponCtrl,
-                                textCapitalization:
-                                    TextCapitalization.characters,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                decoration: const InputDecoration(
-                                  hintText: 'Enter coupon code',
-                                  hintStyle: TextStyle(
-                                    color: Color(0xFF9EA1A8),
-                                    fontSize: 13,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          SizedBox(
-                            height: 48,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'No active coupons available right now.',
-                                    ),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFF45B15),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                ),
-                              ),
-                              child: const Text(
-                                'Apply',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
 
+                    // Cart Items List
+                    ...List.generate(cart.items.length, (index) {
+                      final item = cart.items[index];
+                      return _buildCartItemTile(context, cart, item, index);
+                    }),
+
+                    const SizedBox(height: 16),
+
+                    // Special Instructions (Combined for entire order as per Screen 03 design)
+                    const Text(
+                      'Special Instructions (Optional)',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E2022),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _instructionsCtrl,
+                      maxLines: 2,
+                      style: const TextStyle(fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText:
+                            'E.g. less spicy, no onion, extra cheese etc.',
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF9EA1A8),
+                          fontSize: 13,
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFECECEC),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFF45B15),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // ---- OFF-PREMISE (TAKEAWAY VS DELIVERY) OPTIONS (Requirement 8 & 9) ----
+                    if (_isOffPremiseOrder) ...[
                       const SizedBox(height: 24),
+                      _buildDeliveryTakeawaySection(),
+                    ],
 
-                      // Bill Summary
-                      const Text(
-                        'Bill Summary',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E2022),
+                    const SizedBox(height: 24),
+
+                    // Apply Coupon Section
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.percent_rounded,
+                          size: 20,
+                          color: Color(0xFFF45B15),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFECECEC)),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Apply Coupon',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            color: Color(0xFF1E2022),
+                          ),
                         ),
-                        child: Column(
-                          children: [
-                            _buildBillLine('Items Total', cart.subtotal),
-                            const SizedBox(height: 10),
-                            _buildBillLine('Taxes (5%)', cart.gst),
-                            const SizedBox(height: 10),
-                            _buildBillLine(
-                              'Service Charge',
-                              cart.serviceCharge,
-                            ),
-                            if (_isOffPremiseOrder &&
-                                _offPremiseMode == 'delivery') ...[
-                              const SizedBox(height: 10),
-                              _buildBillLine('Delivery Charge', 40.0),
-                            ],
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 14),
-                              child: Divider(
-                                height: 1,
-                                color: Color(0xFFECECEC),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFECECEC),
                               ),
                             ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Grand Total',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF1E2022),
-                                  ),
+                            child: TextField(
+                              controller: _couponCtrl,
+                              textCapitalization: TextCapitalization.characters,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: 'Enter coupon code',
+                                hintStyle: TextStyle(
+                                  color: Color(0xFF9EA1A8),
+                                  fontSize: 13,
                                 ),
-                                Text(
-                                  '₹${(cart.totalAmount + ((_isOffPremiseOrder && _offPremiseMode == 'delivery') ? 40.0 : 0.0)).toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF1E2022),
-                                  ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 14,
                                 ),
-                              ],
+                              ),
                             ),
-                          ],
+                          ),
                         ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'No active coupons available right now.',
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF45B15),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                            ),
+                            child: const Text(
+                              'Apply',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Bill Summary
+                    const Text(
+                      'Bill Summary',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E2022),
                       ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFECECEC)),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildBillLine('Items Total', cart.subtotal),
+                          const SizedBox(height: 10),
+                          _buildBillLine('Taxes (5%)', cart.gst),
+                          const SizedBox(height: 10),
+                          _buildBillLine('Service Charge', cart.serviceCharge),
+                          if (_isOffPremiseOrder &&
+                              _offPremiseMode == 'delivery') ...[
+                            const SizedBox(height: 10),
+                            _buildBillLine('Delivery Charge', 40.0),
+                          ],
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            child: Divider(height: 1, color: Color(0xFFECECEC)),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Grand Total',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1E2022),
+                                ),
+                              ),
+                              Text(
+                                '₹${(cart.totalAmount + ((_isOffPremiseOrder && _offPremiseMode == 'delivery') ? 40.0 : 0.0)).toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1E2022),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
                 ),
               ),
             ),
@@ -424,55 +413,46 @@ class _CartScreenState extends State<CartScreen> {
               ),
               child: SafeArea(
                 top: false,
-                child: Center(
-                  heightFactor: 1.0,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: _isPlacing ? null : _placeOrder,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF45B15),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        child: _isPlacing
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    _isOffPremiseOrder
-                                        ? (_paymentMode == 'prepaid'
-                                              ? 'Proceed to Pay ₹${(cart.totalAmount + (_offPremiseMode == 'delivery' ? 40.0 : 0.0)).toStringAsFixed(0)}'
-                                              : 'Confirm Order (₹${(cart.totalAmount + (_offPremiseMode == 'delivery' ? 40.0 : 0.0)).toStringAsFixed(0)})')
-                                        : 'Proceed to Order',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(
-                                    Icons.arrow_forward_rounded,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _isPlacing ? null : _placeOrder,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF45B15),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
+                    child: _isPlacing
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _isOffPremiseOrder
+                                    ? (_paymentMode == 'prepaid'
+                                          ? 'Proceed to Pay ₹${(cart.totalAmount + (_offPremiseMode == 'delivery' ? 40.0 : 0.0)).toStringAsFixed(0)}'
+                                          : 'Confirm Order (₹${(cart.totalAmount + (_offPremiseMode == 'delivery' ? 40.0 : 0.0)).toStringAsFixed(0)})')
+                                    : 'Proceed to Order',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded, size: 20),
+                            ],
+                          ),
                   ),
                 ),
               ),

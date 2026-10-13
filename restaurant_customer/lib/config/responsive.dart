@@ -61,13 +61,17 @@ class CustomerPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: maxWidth ?? CustomerResponsive.contentWidth(context),
+    if (maxWidth != null) {
+      return Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth!),
+          child: SizedBox(width: double.infinity, child: child),
         ),
-        child: child,
-      ),
+      );
+    }
+    return SizedBox(
+      width: double.infinity,
+      child: child,
     );
   }
 }

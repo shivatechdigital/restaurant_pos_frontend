@@ -87,38 +87,36 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           child: Container(color: const Color(0xFFECECEC), height: 1),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600), // Web Responsiveness
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Status Stepper
-                      OrderStatusStepper(currentStatus: order.currentStatus),
-                      
-                      const SizedBox(height: 8),
+      body: SizedBox(
+        width: double.infinity,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Status Stepper
+                    OrderStatusStepper(currentStatus: order.currentStatus),
+                    
+                    const SizedBox(height: 8),
 
-                      // Status Highlight Card
-                      _buildStatusCard(order),
+                    // Status Highlight Card
+                    _buildStatusCard(order),
 
-                      const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                      // Order Info Details
-                      _buildOrderInfo(order),
-                    ],
-                  ),
+                    // Order Info Details
+                    _buildOrderInfo(order),
+                  ],
                 ),
               ),
+            ),
 
-              // Bottom Actions
-              _buildBottomActions(context, order),
-            ],
-          ),
+            // Bottom Actions
+            _buildBottomActions(context, order),
+          ],
         ),
       ),
     );

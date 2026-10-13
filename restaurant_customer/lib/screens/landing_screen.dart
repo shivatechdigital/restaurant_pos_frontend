@@ -56,13 +56,11 @@ class _LandingScreenState extends State<LandingScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460), // Web Responsiveness
-              child: _entryCard(context, isQrScanned),
-            ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: SizedBox(
+            width: double.infinity,
+            child: _entryCard(context, isQrScanned),
           ),
         ),
       ),

@@ -102,121 +102,113 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFFF45B15)),
             )
-          : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 1200,
-                ), // Responsive 100% width
-                child: Column(
-                  children: [
-                    // Interactive Toggle: Previous Orders vs Favourites
-                    Container(
-                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFECECEC)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => setState(() => _activeTab = 0),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
+          : SizedBox(
+              width: double.infinity,
+              child: Column(
+                children: [
+                  // Interactive Toggle: Previous Orders vs Favourites
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFECECEC)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _activeTab = 0),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _activeTab == 0
+                                    ? const Color(0xFFF45B15)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Previous Orders',
+                                style: TextStyle(
                                   color: _activeTab == 0
-                                      ? const Color(0xFFF45B15)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Previous Orders',
-                                  style: TextStyle(
-                                    color: _activeTab == 0
-                                        ? Colors.white
-                                        : const Color(0xFF75787E),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                  ),
+                                      ? Colors.white
+                                      : const Color(0xFF75787E),
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
                           ),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => setState(() => _activeTab = 1),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _activeTab == 1
-                                      ? const Color(0xFFF45B15)
-                                      : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                alignment: Alignment.center,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.favorite_rounded,
-                                      size: 16,
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () => setState(() => _activeTab = 1),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _activeTab == 1
+                                    ? const Color(0xFFF45B15)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              alignment: Alignment.center,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.favorite_rounded,
+                                    size: 16,
+                                    color: _activeTab == 1
+                                        ? Colors.white
+                                        : const Color(0xFFF45B15),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Favourites',
+                                    style: TextStyle(
                                       color: _activeTab == 1
                                           ? Colors.white
-                                          : const Color(0xFFF45B15),
+                                          : const Color(0xFF75787E),
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
                                     ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Favourites',
-                                      style: TextStyle(
-                                        color: _activeTab == 1
-                                            ? Colors.white
-                                            : const Color(0xFF75787E),
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
+                  ),
 
-                    Expanded(
-                      child: _activeTab == 0
-                          ? (orders.isEmpty
-                                ? _buildEmptyState()
-                                : RefreshIndicator(
-                                    color: const Color(0xFFF45B15),
-                                    onRefresh: () => context
-                                        .read<OrderProvider>()
-                                        .loadOrderHistory(),
-                                    child: ListView.separated(
-                                      padding: const EdgeInsets.all(16),
-                                      itemCount: orders.length,
-                                      separatorBuilder: (_, __) =>
-                                          const SizedBox(height: 12),
-                                      itemBuilder: (context, index) {
-                                        final orderData = orders[index];
-                                        return _buildOrderCard(orderData);
-                                      },
-                                    ),
-                                  ))
-                          : _buildFavouritesTab(orders),
-                    ),
-                  ],
-                ),
+                  Expanded(
+                    child: _activeTab == 0
+                        ? (orders.isEmpty
+                              ? _buildEmptyState()
+                              : RefreshIndicator(
+                                  color: const Color(0xFFF45B15),
+                                  onRefresh: () => context
+                                      .read<OrderProvider>()
+                                      .loadOrderHistory(),
+                                  child: ListView.separated(
+                                    padding: const EdgeInsets.all(16),
+                                    itemCount: orders.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 12),
+                                    itemBuilder: (context, index) {
+                                      final orderData = orders[index];
+                                      return _buildOrderCard(orderData);
+                                    },
+                                  ),
+                                ))
+                        : _buildFavouritesTab(orders),
+                  ),
+                ],
               ),
             ),
 
@@ -238,43 +230,37 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               ),
               child: SafeArea(
                 top: false,
-                child: Center(
-                  heightFactor: 1.0,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          final sessionId = order.sessionId;
-                          if (sessionId == null) return;
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PaymentScreen(
-                                sessionId: sessionId,
-                                tableNumber: widget.tableNumber,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.receipt_long_rounded, size: 20),
-                        label: const Text(
-                          'View Bill & Pay',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final sessionId = order.sessionId;
+                      if (sessionId == null) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PaymentScreen(
+                            sessionId: sessionId,
+                            tableNumber: widget.tableNumber,
                           ),
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF45B15),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.receipt_long_rounded, size: 20),
+                    label: const Text(
+                      'View Bill & Pay',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF45B15),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -488,9 +474,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
+        width: double.infinity,
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(ctx).height * 0.85,
-          maxWidth: 600,
         ),
         decoration: const BoxDecoration(
           color: Colors.white,

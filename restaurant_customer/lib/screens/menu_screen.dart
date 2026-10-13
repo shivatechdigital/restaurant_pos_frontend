@@ -153,54 +153,50 @@ class _MenuScreenState extends State<MenuScreen> {
             )
           : menu.error.isNotEmpty
           ? _errorView(menu)
-          : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: 1400,
-                ), // Full width responsiveness
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        children: [
-                          // 1. Promotional Banner
-                          _buildFeaturedBanner(),
+          : SizedBox(
+              width: double.infinity,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      children: [
+                        // 1. Promotional Banner
+                        _buildFeaturedBanner(),
 
-                          // 2. Search & Filter Bar
-                          _buildSearchBar(menu),
+                        // 2. Search & Filter Bar
+                        _buildSearchBar(menu),
 
-                          // 3. Category Horizontal List
-                          _buildCategoryRail(filteredCategories),
+                        // 3. Category Horizontal List
+                        _buildCategoryRail(filteredCategories),
 
-                          // 4. Recommended For You (Horizontal)
-                          if (_searchCtrl.text.isEmpty &&
-                              _selectedCategoryId == null)
-                            _buildRecommendedSection(menu.categories),
+                        // 4. Recommended For You (Horizontal)
+                        if (_searchCtrl.text.isEmpty &&
+                            _selectedCategoryId == null)
+                          _buildRecommendedSection(menu.categories),
 
-                          // 5. Order PIN Card
-                          _buildTablePinCard(),
+                        // 5. Order PIN Card
+                        _buildTablePinCard(),
 
-                          // 6. Full Menu List
-                          if (filteredCategories.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.all(40),
-                              child: Center(
-                                child: Text(
-                                  'No items found matching your search.',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
+                        // 6. Full Menu List
+                        if (filteredCategories.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(40),
+                            child: Center(
+                              child: Text(
+                                'No items found matching your search.',
+                                style: TextStyle(color: Colors.grey),
                               ),
-                            )
-                          else
-                            ...displayCategories.map(
-                              (category) => _buildCategorySection(category),
                             ),
-                        ],
-                      ),
+                          )
+                        else
+                          ...displayCategories.map(
+                            (category) => _buildCategorySection(category),
+                          ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
 
@@ -215,49 +211,44 @@ class _MenuScreenState extends State<MenuScreen> {
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1400),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF45B15),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF45B15),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 4,
+                      shadowColor: const Color(0x40F45B15),
+                    ),
+                    onPressed: _openCart,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${cart.totalItems} ITEM${cart.totalItems > 1 ? 'S' : ''} ADDED',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
                           ),
-                          elevation: 4,
-                          shadowColor: const Color(0x40F45B15),
                         ),
-                        onPressed: _openCart,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        const Row(
                           children: [
                             Text(
-                              '${cart.totalItems} ITEM${cart.totalItems > 1 ? 'S' : ''} ADDED',
-                              style: const TextStyle(
+                              'View Cart',
+                              style: TextStyle(
                                 fontWeight: FontWeight.w800,
-                                fontSize: 13,
+                                fontSize: 15,
                               ),
                             ),
-                            const Row(
-                              children: [
-                                Text(
-                                  'View Cart',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.arrow_forward_rounded, size: 18),
-                              ],
-                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_rounded, size: 18),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -274,52 +265,47 @@ class _MenuScreenState extends State<MenuScreen> {
                   ),
                 ],
               ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1400),
-                  child: NavigationBar(
-                    height: 64,
-                    backgroundColor: Colors.white,
-                    indicatorColor: const Color(0xFFFFF2EB),
-                    selectedIndex: 0,
-                    onDestinationSelected: _selectBottomTab,
-                    destinations: const [
-                      NavigationDestination(
-                        icon: Icon(
-                          Icons.restaurant_menu_rounded,
-                          color: Color(0xFF75787E),
-                        ),
-                        selectedIcon: Icon(
-                          Icons.restaurant_menu_rounded,
-                          color: Color(0xFFF45B15),
-                        ),
-                        label: 'Menu',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(
-                          Icons.receipt_long_outlined,
-                          color: Color(0xFF75787E),
-                        ),
-                        selectedIcon: Icon(
-                          Icons.receipt_long_rounded,
-                          color: Color(0xFFF45B15),
-                        ),
-                        label: 'Orders',
-                      ),
-                      NavigationDestination(
-                        icon: Icon(
-                          Icons.payments_outlined,
-                          color: Color(0xFF75787E),
-                        ),
-                        selectedIcon: Icon(
-                          Icons.payments_rounded,
-                          color: Color(0xFFF45B15),
-                        ),
-                        label: 'Pay Bill',
-                      ),
-                    ],
+              child: NavigationBar(
+                height: 64,
+                backgroundColor: Colors.white,
+                indicatorColor: const Color(0xFFFFF2EB),
+                selectedIndex: 0,
+                onDestinationSelected: _selectBottomTab,
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(
+                      Icons.restaurant_menu_rounded,
+                      color: Color(0xFF75787E),
+                    ),
+                    selectedIcon: Icon(
+                      Icons.restaurant_menu_rounded,
+                      color: Color(0xFFF45B15),
+                    ),
+                    label: 'Menu',
                   ),
-                ),
+                  NavigationDestination(
+                    icon: Icon(
+                      Icons.receipt_long_outlined,
+                      color: Color(0xFF75787E),
+                    ),
+                    selectedIcon: Icon(
+                      Icons.receipt_long_rounded,
+                      color: Color(0xFFF45B15),
+                    ),
+                    label: 'Orders',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(
+                      Icons.payments_outlined,
+                      color: Color(0xFF75787E),
+                    ),
+                    selectedIcon: Icon(
+                      Icons.payments_rounded,
+                      color: Color(0xFFF45B15),
+                    ),
+                    label: 'Pay Bill',
+                  ),
+                ],
               ),
             ),
           ],

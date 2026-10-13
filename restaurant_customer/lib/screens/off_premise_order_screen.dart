@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/menu_model.dart';
 import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
-import '../providers/order_provider.dart';
 import '../services/api_service.dart';
 import '../services/session_service.dart';
 import '../widgets/menu_item_card.dart';
@@ -26,28 +25,131 @@ class OffPremiseOrderScreen extends StatefulWidget {
 
 class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
   final _searchCtrl = TextEditingController();
+  final _phoneAuthCtrl = TextEditingController();
+  final _otpAuthCtrl = TextEditingController();
+  final _api = ApiService();
+
   int? _selectedCategoryId;
   String? _savedPhone;
+  bool _isAuthenticated = false;
+  bool _authLoading = true;
+  bool _otpSent = false;
+  bool _isSendingOtp = false;
+  bool _isVerifyingOtp = false;
+  String _authError = '';
+  String? _testOtp;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.read<MenuProvider>().loadMenu(widget.restaurantId.toString());
-      _loadSavedPhone();
-    });
+    _checkAuthentication();
   }
 
-  Future<void> _loadSavedPhone() async {
+  Future<void> _checkAuthentication() async {
     final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
     final phone = prefs.getString('phone');
-    if (mounted) setState(() => _savedPhone = phone);
+
+    if (token != null &&
+        token.isNotEmpty &&
+        phone != null &&
+        phone.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _savedPhone = phone;
+          _isAuthenticated = true;
+          _authLoading = false;
+        });
+        context.read<MenuProvider>().loadMenu(widget.restaurantId.toString());
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isAuthenticated = false;
+          _authLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSendAuthOtp() async {
+    final phone = _phoneAuthCtrl.text.trim();
+    if (phone.length != 10) {
+      setState(
+        () => _authError = 'Please enter a valid 10-digit mobile number',
+      );
+      return;
+    }
+    setState(() {
+      _isSendingOtp = true;
+      _authError = '';
+    });
+
+    try {
+      final res = await _api.sendOtp(phone);
+      if (!mounted) return;
+      if (res['success'] == true) {
+        setState(() {
+          _otpSent = true;
+          _testOtp = res['data']?['otp']?.toString();
+        });
+      } else {
+        setState(() => _authError = res['message'] ?? 'Unable to send OTP');
+      }
+    } catch (e) {
+      setState(() => _authError = 'Connection error. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isSendingOtp = false);
+    }
+  }
+
+  Future<void> _handleVerifyAuthOtp() async {
+    final phone = _phoneAuthCtrl.text.trim();
+    final otp = _otpAuthCtrl.text.trim();
+
+    if (otp.length != 6) {
+      setState(() => _authError = 'Please enter the 6-digit OTP');
+      return;
+    }
+
+    setState(() {
+      _isVerifyingOtp = true;
+      _authError = '';
+    });
+
+    try {
+      final res = await _api.verifyOtp(phone, otp);
+      if (!mounted) return;
+
+      if (res['success'] == true) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('phone', phone);
+        if (res['data']?['token'] != null) {
+          await prefs.setString('token', res['data']['token']);
+        }
+
+        setState(() {
+          _savedPhone = phone;
+          _isAuthenticated = true;
+        });
+        context.read<MenuProvider>().loadMenu(widget.restaurantId.toString());
+      } else {
+        setState(
+          () => _authError = res['message'] ?? 'Incorrect OTP. Try again.',
+        );
+      }
+    } catch (e) {
+      setState(() => _authError = 'Verification failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isVerifyingOtp = false);
+    }
   }
 
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _phoneAuthCtrl.dispose();
+    _otpAuthCtrl.dispose();
     super.dispose();
   }
 
@@ -65,6 +167,19 @@ class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_authLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF9F9FB),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFFF45B15)),
+        ),
+      );
+    }
+
+    if (!_isAuthenticated) {
+      return _buildAuthView();
+    }
+
     final menu = context.watch<MenuProvider>();
     final cart = context.watch<CartProvider>();
     final filteredCategories = menu.filteredCategories;
@@ -146,42 +261,40 @@ class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
             )
           : menu.error.isNotEmpty
           ? _errorView(menu)
-          : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1400),
-                child: ListView(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  children: [
-                    // 1. Promotional Deal Banner
-                    _buildFeaturedBanner(),
+          : SizedBox(
+              width: double.infinity,
+              child: ListView(
+                padding: const EdgeInsets.only(bottom: 24),
+                children: [
+                  // 1. Promotional Deal Banner
+                  _buildFeaturedBanner(),
 
-                    // 2. Search & Veg Toggle Bar (Issue 1)
-                    _buildSearchBar(menu),
+                  // 2. Search & Veg Toggle Bar (Issue 1)
+                  _buildSearchBar(menu),
 
-                    // 3. Category Horizontal List
-                    _buildCategoryRail(filteredCategories),
+                  // 3. Category Horizontal List
+                  _buildCategoryRail(filteredCategories),
 
-                    // 4. Recommended For You (Diverse items - Issue 3)
-                    if (_searchCtrl.text.isEmpty && _selectedCategoryId == null)
-                      _buildRecommendedSection(menu.categories),
+                  // 4. Recommended For You (Diverse items - Issue 3)
+                  if (_searchCtrl.text.isEmpty && _selectedCategoryId == null)
+                    _buildRecommendedSection(menu.categories),
 
-                    // 5. Full Menu Categories with 4/3/2 Column Grid (Issue 4)
-                    if (filteredCategories.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(40),
-                        child: Center(
-                          child: Text(
-                            'No items found matching your search.',
-                            style: TextStyle(color: Colors.grey),
-                          ),
+                  // 5. Full Menu Categories with 4/3/2 Column Grid (Issue 4)
+                  if (filteredCategories.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(40),
+                      child: Center(
+                        child: Text(
+                          'No items found matching your search.',
+                          style: TextStyle(color: Colors.grey),
                         ),
-                      )
-                    else
-                      ...displayCategories.map(
-                        (category) => _buildCategorySection(category),
                       ),
-                  ],
-                ),
+                    )
+                  else
+                    ...displayCategories.map(
+                      (category) => _buildCategorySection(category),
+                    ),
+                ],
               ),
             ),
 
@@ -202,50 +315,44 @@ class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
               ),
               child: SafeArea(
                 top: false,
-                child: Center(
-                  heightFactor: 1.0,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1400),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF45B15),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF45B15),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 4,
+                      shadowColor: const Color(0x40F45B15),
+                    ),
+                    onPressed: _openCart,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${cart.totalItems} ITEM${cart.totalItems > 1 ? 'S' : ''} ADDED',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
                           ),
-                          elevation: 4,
-                          shadowColor: const Color(0x40F45B15),
                         ),
-                        onPressed: _openCart,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        const Row(
                           children: [
                             Text(
-                              '${cart.totalItems} ITEM${cart.totalItems > 1 ? 'S' : ''} ADDED',
-                              style: const TextStyle(
+                              'View Cart',
+                              style: TextStyle(
                                 fontWeight: FontWeight.w800,
-                                fontSize: 13,
+                                fontSize: 15,
                               ),
                             ),
-                            const Row(
-                              children: [
-                                Text(
-                                  'View Cart',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Icon(Icons.arrow_forward_rounded, size: 18),
-                              ],
-                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward_rounded, size: 18),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -712,6 +819,404 @@ class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
     );
   }
 
+  // ---- AUTH VIEW: PHONE & OTP ENTRY FIRST (Matching Dine-in Look) ----
+  Widget _buildAuthView() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9F9FB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: Color(0xFF1E2022),
+          ),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const Text(
+          'Online Ordering',
+          style: TextStyle(
+            color: Color(0xFF1E2022),
+            fontWeight: FontWeight.w900,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: false,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF2EB),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Row(
+              children: [
+                Icon(
+                  Icons.delivery_dining_rounded,
+                  size: 16,
+                  color: Color(0xFFF45B15),
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Takeaway & Delivery',
+                  style: TextStyle(
+                    color: Color(0xFFF45B15),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFECECEC), height: 1),
+        ),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Container(
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFECECEC)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A000000),
+                    blurRadius: 24,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFFF7A3D), Color(0xFFF45B15)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x35F45B15),
+                            blurRadius: 16,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _otpSent
+                            ? Icons.mark_email_read_rounded
+                            : Icons.phone_iphone_rounded,
+                        size: 30,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _otpSent ? 'Enter 6-Digit OTP' : 'Start Your Order',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E2022),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _otpSent
+                        ? 'We sent a verification code to +91 ${_phoneAuthCtrl.text}'
+                        : 'Enter your mobile number to access takeaway and delivery.',
+                    style: const TextStyle(
+                      color: Color(0xFF75787E),
+                      fontSize: 13,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+
+                  if (!_otpSent) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8, left: 2),
+                      child: Text(
+                        'Mobile Number *',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E2022),
+                        ),
+                      ),
+                    ),
+                    TextField(
+                      controller: _phoneAuthCtrl,
+                      keyboardType: TextInputType.phone,
+                      maxLength: 10,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: Color(0xFF1E2022),
+                      ),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        hintText: '9876543210',
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF9EA1A8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        prefixText: '+91  ',
+                        prefixStyle: const TextStyle(
+                          color: Color(0xFF1E2022),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.phone_iphone_rounded,
+                          color: Color(0xFFF45B15),
+                          size: 20,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 15,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFECECEC),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFF45B15),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    if (_authError.isNotEmpty) ...[
+                      _authErrorBanner(_authError),
+                      const SizedBox(height: 12),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _isSendingOtp ? null : _handleSendAuthOtp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF45B15),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: _isSendingOtp
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.2,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Continue with OTP',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.arrow_forward_rounded, size: 18),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ] else ...[
+                    // OTP Box
+                    TextField(
+                      controller: _otpAuthCtrl,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        letterSpacing: 8,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1E2022),
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                        counterText: '',
+                        hintText: '• • • • • •',
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF9EA1A8),
+                          fontSize: 24,
+                          letterSpacing: 8,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF9FAFB),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFECECEC),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFF45B15),
+                            width: 1.8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_testOtp != null) ...[
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () => _otpAuthCtrl.text = _testOtp!,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: Text(
+                            'Test OTP: $_testOtp (Tap to Autofill)',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF92400E),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    if (_authError.isNotEmpty) ...[
+                      _authErrorBanner(_authError),
+                      const SizedBox(height: 12),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _isVerifyingOtp
+                            ? null
+                            : _handleVerifyAuthOtp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF45B15),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: _isVerifyingOtp
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.2,
+                                ),
+                              )
+                            : const Text(
+                                'Verify & Open Menu',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _otpSent = false;
+                        _authError = '';
+                      }),
+                      child: const Text(
+                        'Change Mobile Number',
+                        style: TextStyle(
+                          color: Color(0xFF75787E),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _authErrorBanner(String error) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: Color(0xFFDC2626),
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              error,
+              style: const TextStyle(
+                color: Color(0xFFB91C1C),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ---- OFF-PREMISE ORDER HISTORY MODAL (Requirements 11 & 12) ----
   void _showOffPremiseHistoryModal() {
     final phoneCtrl = TextEditingController(text: _savedPhone ?? '');
@@ -1059,169 +1564,167 @@ class _OffPremiseTrackingScreenState extends State<OffPremiseTrackingScreen> {
           child: Container(color: const Color(0xFFECECEC), height: 1),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: RefreshIndicator(
-            color: const Color(0xFFF45B15),
-            onRefresh: _load,
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFFF2EB),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      widget.orderType == 'delivery'
-                          ? Icons.delivery_dining_rounded
-                          : Icons.shopping_bag_rounded,
-                      size: 54,
-                      color: const Color(0xFFF45B15),
-                    ),
+      body: SizedBox(
+        width: double.infinity,
+        child: RefreshIndicator(
+          color: const Color(0xFFF45B15),
+          onRefresh: _load,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF2EB),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    widget.orderType == 'delivery'
+                        ? Icons.delivery_dining_rounded
+                        : Icons.shopping_bag_rounded,
+                    size: 54,
+                    color: const Color(0xFFF45B15),
                   ),
                 ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Order status: ${status.toString().toUpperCase()}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E2022),
+                ),
+              ),
+              if (widget.pickupToken != null) ...[
                 const SizedBox(height: 18),
-                Text(
-                  'Order status: ${status.toString().toUpperCase()}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF1E2022),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFECECEC)),
                   ),
-                ),
-                if (widget.pickupToken != null) ...[
-                  const SizedBox(height: 18),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFECECEC)),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Your Pickup Token',
-                          style: TextStyle(
-                            color: Color(0xFF75787E),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Your Pickup Token',
+                        style: TextStyle(
+                          color: Color(0xFF75787E),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          widget.pickupToken!,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            color: Color(0xFF16A34A),
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 3,
-                          ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.pickupToken!,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          color: Color(0xFF16A34A),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 3,
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                const Text(
-                  'Ordered Items',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E2022),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ..._orders.map((order) {
-                  final items = order['items'] as List? ?? [];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFECECEC)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Order #${order['id']}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                              ),
-                            ),
-                            Text(
-                              '₹${order['final_amount']}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 16,
-                                color: Color(0xFFF45B15),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 16),
-                        ...items.map(
-                          (i) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 3),
-                            child: Row(
-                              children: [
-                                Text(
-                                  '${i['quantity']}x ',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    '${i['name']}',
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ),
-                                Text(
-                                  '₹${i['total_price'] ?? i['price']}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => Navigator.maybePop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF45B15),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Back to Menu',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
+              const SizedBox(height: 24),
+              const Text(
+                'Ordered Items',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E2022),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ..._orders.map((order) {
+                final items = order['items'] as List? ?? [];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFECECEC)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Order #${order['id']}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            '₹${order['final_amount']}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              color: Color(0xFFF45B15),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 16),
+                      ...items.map(
+                        (i) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${i['quantity']}x ',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${i['name']}',
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                              ),
+                              Text(
+                                '₹${i['total_price'] ?? i['price']}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.maybePop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF45B15),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Back to Menu',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                ),
+              ),
+            ],
           ),
         ),
       ),
