@@ -7,120 +7,215 @@ import '../providers/cart_provider.dart';
 
 class MenuItemCard extends StatelessWidget {
   final MenuItem item;
+  final bool isGrid; // True for "Recommended for You" (Vertical), False for "Full Menu" (Horizontal)
 
-  const MenuItemCard({super.key, required this.item});
+  const MenuItemCard({
+    super.key,
+    required this.item,
+    this.isGrid = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
     final qty = cart.getItemQty(item.id);
-    final isWide = MediaQuery.sizeOf(context).width >= 700;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: isWide ? 16 : 14, vertical: 6),
+      margin: EdgeInsets.symmetric(
+        horizontal: isGrid ? 0 : 16,
+        vertical: isGrid ? 0 : 8,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFECECEC)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF0F0F0)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),
-            blurRadius: 14,
+            blurRadius: 10,
             offset: Offset(0, 4),
           ),
         ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         onTap: item.isAvailable ? () => _showCustomizeDialog(context) : null,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+        child: isGrid
+            ? _buildVerticalCard(context, qty)
+            : _buildHorizontalCard(context, qty),
+      ),
+    );
+  }
+
+  // ---- VERTICAL CARD (For Recommended Section & Grid Layout) ----
+  Widget _buildVerticalCard(BuildContext context, int qty) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              height: 120,
+              color: const Color(0xFFFFF2EB),
+              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      item.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                    )
+                  : _imagePlaceholder(),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Title & Veg Badge
+          Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ---- IMAGE / PLACEHOLDER (Reference rounded image with shadow) ----
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      color: const Color(0xFFF9FAFB),
-                      child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                          ? Image.network(
-                              item.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _imagePlaceholder(),
-                            )
-                          : _imagePlaceholder(),
-                    ),
-                  ),
-                  Positioned(top: 6, left: 6, child: _vegBadge(item.isVeg)),
-                ],
-              ),
-              const SizedBox(width: 14),
-
-              // ---- DETAILS ----
+              _vegBadge(item.isVeg),
+              const SizedBox(width: 6),
               Expanded(
-                child: Column(
+                child: Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Color(0xFF1E2022),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          if (item.description.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              item.description,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF75787E),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          const SizedBox(height: 10),
+
+          // Price & Add Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '₹${item.price.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: Color(0xFF1E2022),
+                ),
+              ),
+              if (!item.isAvailable)
+                _soldOutBadge()
+              else if (qty == 0)
+                _addButton(context)
+              else
+                _quantityControl(context, qty),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---- HORIZONTAL CARD (For Full Menu Section) ----
+  Widget _buildHorizontalCard(BuildContext context, int qty) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 90,
+              height: 90,
+              color: const Color(0xFFFFF2EB),
+              child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                  ? Image.network(
+                      item.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                    )
+                  : _imagePlaceholder(),
+            ),
+          ),
+          const SizedBox(width: 14),
+
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                        color: Color(0xFF1E2022),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: _vegBadge(item.isVeg),
                     ),
-                    if (item.description.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        item.description,
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        item.name,
                         style: const TextStyle(
-                          color: Color(0xFF75787E),
-                          fontSize: 12,
-                          height: 1.25,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          color: Color(0xFF1E2022),
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                    const SizedBox(height: 6),
+                    ),
+                  ],
+                ),
+                if (item.description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    item.description,
+                    style: const TextStyle(
+                      color: Color(0xFF75787E),
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 8),
 
-                    // Price + prep time + customizable tag
+                // Price & Prep Time & Button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                     Row(
                       children: [
                         Text(
                           '₹${item.price.toStringAsFixed(0)}',
                           style: const TextStyle(
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                             fontSize: 16,
-                            color: Color(0xFFF45B15),
+                            color: Color(0xFF1E2022),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        if (item.prepTimeMinutes > 0) ...[
-                          const Icon(
-                            Icons.schedule_rounded,
-                            size: 13,
-                            color: Color(0xFF9EA1A8),
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${item.prepTimeMinutes}m',
-                            style: const TextStyle(
-                              color: Color(0xFF9EA1A8),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        if (item.modifiers.isNotEmpty)
+                        if (item.modifiers.isNotEmpty) ...[
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -128,7 +223,7 @@ class MenuItemCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF2EB),
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
                               'Custom',
@@ -139,57 +234,33 @@ class MenuItemCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                        ],
                       ],
                     ),
+                    if (!item.isAvailable)
+                      _soldOutBadge()
+                    else if (qty == 0)
+                      _addButton(context)
+                    else
+                      _quantityControl(context, qty),
                   ],
                 ),
-              ),
-
-              // ---- ADD BUTTON / QUANTITY ----
-              const SizedBox(width: 8),
-              if (!item.isAvailable)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text(
-                    'Sold Out',
-                    style: TextStyle(
-                      color: Color(0xFF9CA3AF),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                )
-              else if (qty == 0)
-                _addButton(context)
-              else
-                _quantityControl(context, qty),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
+  // ---- WIDGET COMPONENTS ----
+
   Widget _imagePlaceholder() {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFF2EB),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
-          Icons.restaurant_rounded,
-          size: 24,
-          color: Color(0xFFF45B15),
-        ),
+    return const Center(
+      child: Icon(
+        Icons.restaurant_rounded,
+        size: 32,
+        color: Color(0xFFF45B15),
       ),
     );
   }
@@ -214,82 +285,109 @@ class MenuItemCard extends StatelessWidget {
     );
   }
 
-  Widget _addButton(BuildContext context) {
+  Widget _soldOutBadge() {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF45B15),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x30F45B15),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          ),
-        ],
+        color: const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: IconButton(
-        onPressed: () => _showCustomizeDialog(context),
-        icon: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-        padding: EdgeInsets.zero,
-        tooltip: 'Add to Cart',
+      child: const Text(
+        'Sold Out',
+        style: TextStyle(
+          color: Color(0xFF9CA3AF),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  Widget _addButton(BuildContext context) {
+    return InkWell(
+      onTap: () => _showCustomizeDialog(context),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF45B15),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x30F45B15),
+              blurRadius: 8,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
       ),
     );
   }
 
   Widget _quantityControl(BuildContext context, int qty) {
     return Container(
+      height: 32,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF2EB),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFFFD4C2)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFF45B15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _qtyBtn(Icons.remove_rounded, () {
-            final cart = context.read<CartProvider>();
-            final idx = cart.items.indexWhere((i) => i.menuItemId == item.id);
-            if (idx >= 0) cart.decreaseQty(idx);
-          }),
-          Padding(
+          InkWell(
+            onTap: () {
+              final cart = context.read<CartProvider>();
+              final idx = cart.items.indexWhere((i) => i.menuItemId == item.id);
+              if (idx >= 0) cart.decreaseQty(idx);
+            },
+            borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
+            child: const SizedBox(
+              width: 28,
+              child: Center(
+                child: Icon(Icons.remove_rounded, color: Color(0xFFF45B15), size: 16),
+              ),
+            ),
+          ),
+          Container(
             padding: const EdgeInsets.symmetric(horizontal: 8),
+            color: const Color(0xFFFFF2EB),
+            alignment: Alignment.center,
             child: Text(
               '$qty',
               style: const TextStyle(
                 color: Color(0xFFF45B15),
                 fontWeight: FontWeight.w800,
-                fontSize: 14,
+                fontSize: 13,
               ),
             ),
           ),
-          _qtyBtn(Icons.add_rounded, () {
-            final cart = context.read<CartProvider>();
-            final idx = cart.items.indexWhere((i) => i.menuItemId == item.id);
-            if (idx >= 0) cart.increaseQty(idx);
-          }),
+          InkWell(
+            onTap: () {
+              final cart = context.read<CartProvider>();
+              final idx = cart.items.indexWhere((i) => i.menuItemId == item.id);
+              if (idx >= 0) cart.increaseQty(idx);
+            },
+            borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
+            child: const SizedBox(
+              width: 28,
+              child: Center(
+                child: Icon(Icons.add_rounded, color: Color(0xFFF45B15), size: 16),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _qtyBtn(IconData icon, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Icon(icon, color: const Color(0xFFF45B15), size: 16),
-      ),
-    );
-  }
-
-  // ---- CUSTOMIZE DIALOG ----
+  // ---- EXISTING CUSTOMIZE DIALOG LOGIC ----
   void _showCustomizeDialog(BuildContext context) {
     final selectedMods = <SelectedModifier>[];
     final instructionsCtrl = TextEditingController();
 
-    // Default modifiers pre-select karo
     for (final mod in item.modifiers) {
       if (mod.isDefault) {
         selectedMods.add(
@@ -314,11 +412,10 @@ class MenuItemCard extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: const BoxDecoration(
-                      color: Color(0xFF1B5E20),
+                      color: Color(0xFFF45B15),
                       borderRadius: BorderRadius.vertical(
                         top: Radius.circular(16),
                       ),
@@ -351,13 +448,13 @@ class MenuItemCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            item.description,
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Modifiers
+                          if (item.description.isNotEmpty) ...[
+                            Text(
+                              item.description,
+                              style: TextStyle(color: Colors.grey[600]),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                           if (item.modifiers.isNotEmpty) ...[
                             const Text(
                               '🧀 Customize Your Order',
@@ -374,13 +471,13 @@ class MenuItemCard extends StatelessWidget {
                               return CheckboxListTile(
                                 dense: true,
                                 contentPadding: EdgeInsets.zero,
-                                activeColor: const Color(0xFF1B5E20),
+                                activeColor: const Color(0xFFF45B15),
                                 title: Text(mod.name),
                                 subtitle: mod.price > 0
                                     ? Text(
                                         '+₹${mod.price.toStringAsFixed(0)}',
                                         style: const TextStyle(
-                                          color: Colors.orange,
+                                          color: Color(0xFFF45B15),
                                           fontWeight: FontWeight.w600,
                                         ),
                                       )
@@ -407,8 +504,6 @@ class MenuItemCard extends StatelessWidget {
                             }),
                             const Divider(),
                           ],
-
-                          // Special Instructions
                           const Text(
                             '📝 Special Instructions',
                             style: TextStyle(
@@ -434,7 +529,6 @@ class MenuItemCard extends StatelessWidget {
                     ),
                   ),
 
-                  // Footer — Price + Add Button
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -461,7 +555,7 @@ class MenuItemCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B5E20),
+                                color: Color(0xFF1E2022),
                               ),
                             ),
                           ],
@@ -488,7 +582,7 @@ class MenuItemCard extends StatelessWidget {
                                     Text('${item.name} added to cart!'),
                                   ],
                                 ),
-                                backgroundColor: const Color(0xFF1B5E20),
+                                backgroundColor: const Color(0xFFF45B15),
                                 duration: const Duration(seconds: 2),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
@@ -500,7 +594,7 @@ class MenuItemCard extends StatelessWidget {
                           icon: const Icon(Icons.shopping_cart, size: 18),
                           label: const Text('Add to Cart'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1B5E20),
+                            backgroundColor: const Color(0xFFF45B15),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 20,

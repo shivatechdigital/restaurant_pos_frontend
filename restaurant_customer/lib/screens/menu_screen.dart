@@ -7,7 +7,6 @@ import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../config/socket_service.dart';
-import '../config/responsive.dart';
 import '../services/session_service.dart';
 import '../widgets/menu_item_card.dart';
 import 'cart_screen.dart';
@@ -53,92 +52,57 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     final menu = context.watch<MenuProvider>();
     final cart = context.watch<CartProvider>();
-    final filtered = menu.filteredCategories;
+    final filteredCategories = menu.filteredCategories;
 
-    final selectedCategories = filtered
+    final selectedCategories = filteredCategories
         .where((category) => category.id == _selectedCategoryId)
         .toList();
     final displayCategories = selectedCategories.isEmpty
-        ? filtered
+        ? filteredCategories
         : selectedCategories;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: const Color(0xFFF9F9FB),
 
-      // ---- APP BAR ----
+      // ---- APP BAR (Matching Design Header) ----
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: Row(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF2EB),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.restaurant_rounded,
-                color: Color(0xFFF45B15),
-                size: 20,
+            const Text(
+              'Food Plaza',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1E2022),
+                letterSpacing: -0.5,
               ),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Sarjapur PetPooja',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF1E2022),
-                    ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on_rounded,
+                  size: 14,
+                  color: Color(0xFFF45B15),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Dine In  •  Table ${widget.tableNumber}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF75787E),
                   ),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_rounded,
-                        size: 12,
-                        color: Color(0xFFF45B15),
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        'Dine In  •  Table ${widget.tableNumber}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF75787E),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
         actions: [
-          // Order History
-          IconButton(
-            icon: const Icon(
-              Icons.receipt_long_rounded,
-              color: Color(0xFF1E2022),
-            ),
-            tooltip: 'Order History',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      OrderHistoryScreen(tableNumber: widget.tableNumber),
-                ),
-              );
-            },
-          ),
-          // Call Waiter
           IconButton(
             icon: const Icon(
               Icons.notifications_none_rounded,
@@ -152,11 +116,8 @@ class _MenuScreenState extends State<MenuScreen> {
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Row(
-                    children: [
-                      Text('🛎️ '),
-                      Text('Waiter ko alert bhej diya gaya hai!'),
-                    ],
+                  content: const Text(
+                    '🛎️ Waiter ko alert bhej diya gaya hai!',
                   ),
                   backgroundColor: const Color(0xFFF45B15),
                   behavior: SnackBarBehavior.floating,
@@ -167,254 +128,198 @@ class _MenuScreenState extends State<MenuScreen> {
               );
             },
           ),
-          const SizedBox(width: 4),
+          Container(
+            margin: const EdgeInsets.only(right: 16, left: 4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFECECEC), width: 2),
+            ),
+            child: const CircleAvatar(
+              radius: 16,
+              backgroundColor: Color(0xFFFFF2EB),
+              child: Icon(
+                Icons.person_rounded,
+                size: 20,
+                color: Color(0xFFF45B15),
+              ),
+            ),
+          ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFECECEC), height: 1),
-        ),
       ),
 
       body: menu.isLoading
           ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: Color(0xFFF45B15)),
-                  SizedBox(height: 12),
-                  Text('Menu load ho raha hai...'),
-                ],
-              ),
+              child: CircularProgressIndicator(color: Color(0xFFF45B15)),
             )
           : menu.error.isNotEmpty
           ? _errorView(menu)
-          : Column(
-              children: [
-                Padding(
-                  padding: CustomerResponsive.pagePadding(context),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _searchCtrl,
-                          onChanged: menu.search,
-                          decoration: InputDecoration(
-                            hintText: 'Search dishes',
-                            prefixIcon: const Icon(Icons.search),
-                            suffixIcon: _searchCtrl.text.isEmpty
-                                ? null
-                                : IconButton(
-                                    tooltip: 'Clear search',
-                                    icon: const Icon(Icons.close),
-                                    onPressed: () {
-                                      _searchCtrl.clear();
-                                      menu.search('');
-                                    },
-                                  ),
-                            filled: true,
-                            fillColor: Colors.white,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 1400,
+                ), // Full width responsiveness
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.only(bottom: 24),
                         children: [
-                          const Text(
-                            'Veg only',
-                            style: TextStyle(fontSize: 11),
-                          ),
-                          SizedBox(
-                            height: 30,
-                            child: Switch.adaptive(
-                              value: menu.vegOnly,
-                              activeTrackColor: const Color(0xFFF45B15),
-                              onChanged: menu.setVegOnly,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                          // 1. Promotional Banner
+                          _buildFeaturedBanner(),
 
-                _buildCategoryRail(filtered),
+                          // 2. Search & Filter Bar
+                          _buildSearchBar(menu),
 
-                // ---- MENU ITEMS ----
-                Expanded(
-                  child: filtered.isEmpty
-                      ? const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.search_off,
-                                size: 50,
-                                color: Colors.grey,
+                          // 3. Category Horizontal List
+                          _buildCategoryRail(filteredCategories),
+
+                          // 4. Recommended For You (Horizontal)
+                          if (_searchCtrl.text.isEmpty &&
+                              _selectedCategoryId == null)
+                            _buildRecommendedSection(menu.categories),
+
+                          // 5. Order PIN Card
+                          _buildTablePinCard(),
+
+                          // 6. Full Menu List
+                          if (filteredCategories.isEmpty)
+                            const Padding(
+                              padding: EdgeInsets.all(40),
+                              child: Center(
+                                child: Text(
+                                  'No items found matching your search.',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
                               ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Koi item nahi mila',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView(
-                          padding: const EdgeInsets.only(bottom: 24),
-                          children: [
-                            _buildFeaturedBanner(menu.categories),
-                            _buildTablePinCard(),
+                            )
+                          else
                             ...displayCategories.map(
                               (category) => _buildCategorySection(category),
                             ),
-                            _buildRestaurantFooter(),
-                          ],
-                        ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
 
+      // ---- BOTTOM NAVIGATION & CART BAR ----
       bottomNavigationBar: SafeArea(
         top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Floating Cart Button
             if (!cart.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 6),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFF45B15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+              Container(
+                color: Colors.white,
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF45B15),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 4,
+                          shadowColor: const Color(0x40F45B15),
+                        ),
+                        onPressed: _openCart,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${cart.totalItems} ITEM${cart.totalItems > 1 ? 'S' : ''} ADDED',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const Row(
+                              children: [
+                                Text(
+                                  'View Cart',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward_rounded, size: 18),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    onPressed: _openCart,
-                    child: Text(
-                      'CONFIRM ORDER (${cart.totalItems} ${cart.totalItems == 1 ? 'item' : 'items'})',
-                    ),
                   ),
                 ),
               ),
-            NavigationBar(
-              height: 64,
-              backgroundColor: Colors.white,
-              indicatorColor: const Color(0xFFFFE5D8),
-              selectedIndex: 0,
-              onDestinationSelected: _selectBottomTab,
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.menu_book_outlined),
-                  selectedIcon: Icon(Icons.menu_book),
-                  label: 'Menu',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.room_service_outlined),
-                  selectedIcon: Icon(Icons.room_service),
-                  label: 'Orders',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.receipt_long_outlined),
-                  selectedIcon: Icon(Icons.receipt_long),
-                  label: 'Pay Bill',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildCategoryRail(List<Category> categories) {
-    return SizedBox(
-      height: 96,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        children: [
-          _categoryTile(null, 'All', null),
-          ...categories.map((category) {
-            final image = category.items
-                .where((item) => item.imageUrl?.isNotEmpty == true)
-                .firstOrNull
-                ?.imageUrl;
-            return _categoryTile(category.id, category.name, image);
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _categoryTile(int? id, String name, String? imageUrl) {
-    final selected = _selectedCategoryId == id;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedCategoryId = id),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 5),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF45B15) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: selected ? const Color(0xFFF45B15) : const Color(0xFFE5E7EB),
-          ),
-          boxShadow: selected
-              ? const [
+            // Bottom Nav Bar
+            Container(
+              decoration: const BoxDecoration(
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x35F45B15),
+                    color: Color(0x0A000000),
                     blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ]
-              : const [
-                  BoxShadow(
-                    color: Color(0x06000000),
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
+                    offset: Offset(0, -4),
                   ),
                 ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: selected
-                    ? Colors.white.withValues(alpha: 0.25)
-                    : const Color(0xFFFFF2EB),
-                shape: BoxShape.circle,
               ),
               child: Center(
-                child: Icon(
-                  id == null
-                      ? Icons.grid_view_rounded
-                      : Icons.restaurant_rounded,
-                  size: 16,
-                  color: selected ? Colors.white : const Color(0xFFF45B15),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1400),
+                  child: NavigationBar(
+                    height: 64,
+                    backgroundColor: Colors.white,
+                    indicatorColor: const Color(0xFFFFF2EB),
+                    selectedIndex: 0,
+                    onDestinationSelected: _selectBottomTab,
+                    destinations: const [
+                      NavigationDestination(
+                        icon: Icon(
+                          Icons.restaurant_menu_rounded,
+                          color: Color(0xFF75787E),
+                        ),
+                        selectedIcon: Icon(
+                          Icons.restaurant_menu_rounded,
+                          color: Color(0xFFF45B15),
+                        ),
+                        label: 'Menu',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(
+                          Icons.receipt_long_outlined,
+                          color: Color(0xFF75787E),
+                        ),
+                        selectedIcon: Icon(
+                          Icons.receipt_long_rounded,
+                          color: Color(0xFFF45B15),
+                        ),
+                        label: 'Orders',
+                      ),
+                      NavigationDestination(
+                        icon: Icon(
+                          Icons.payments_outlined,
+                          color: Color(0xFF75787E),
+                        ),
+                        selectedIcon: Icon(
+                          Icons.payments_rounded,
+                          color: Color(0xFFF45B15),
+                        ),
+                        label: 'Pay Bill',
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              name,
-              style: TextStyle(
-                color: selected ? Colors.white : const Color(0xFF1E2022),
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               ),
             ),
           ],
@@ -423,12 +328,11 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  Widget _buildFeaturedBanner(List<Category> categories) {
-    final featured = categories
-        .expand((category) => category.items)
-        .firstOrNull;
+  // ---- WIDGET BUILDERS ----
+
+  Widget _buildFeaturedBanner() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       child: Container(
         height: 140,
         clipBehavior: Clip.antiAlias,
@@ -449,21 +353,21 @@ class _MenuScreenState extends State<MenuScreen> {
         ),
         child: Stack(
           children: [
-            if (featured?.imageUrl?.isNotEmpty == true)
-              Positioned(
-                right: -20,
-                top: -10,
-                bottom: -10,
-                width: 190,
-                child: Opacity(
-                  opacity: 0.85,
-                  child: Image.network(
-                    featured!.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                  ),
+            // Placeholder background image
+            Positioned(
+              right: -30,
+              top: -20,
+              bottom: -20,
+              width: 220,
+              child: Opacity(
+                opacity: 0.9,
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop', // Burger placeholder
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
               ),
+            ),
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -484,39 +388,42 @@ class _MenuScreenState extends State<MenuScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF45B15),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'SPECIAL DEAL',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   const Text(
                     'Delicious Food For\nEvery Mood',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 22,
                       fontWeight: FontWeight.w900,
-                      height: 1.15,
+                      height: 1.2,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   const Text(
-                    'Fresh Ingredients • Great Taste',
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                    'Fresh Ingredients\nGreat Taste',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF45B15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'View Offers →',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -527,37 +434,320 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  Widget _buildTablePinCard() {
+  Widget _buildSearchBar(MenuProvider menu) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE5E5E5)),
-        ),
-        child: Row(
-          children: [
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Order together',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFECECEC)),
+              ),
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: menu.search,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Search for dishes...',
+                  hintStyle: const TextStyle(color: Color(0xFF9EA1A8)),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: Color(0xFF75787E),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Share your table PIN with your companions.',
-                    style: TextStyle(color: Color(0xFF777777), fontSize: 13),
+                  suffixIcon: _searchCtrl.text.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            menu.search('');
+                          },
+                        ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          InkWell(
+            onTap: () => menu.setVegOnly(!menu.vegOnly),
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: menu.vegOnly ? const Color(0xFFEAF8F2) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: menu.vegOnly
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFFECECEC),
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xFF16A34A),
+                        width: 1.3,
+                      ),
+                      borderRadius: BorderRadius.circular(2.5),
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 5,
+                        height: 5,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF16A34A),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  const Text(
+                    'Veg',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E2022),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Transform.scale(
+                    scale: 0.72,
+                    child: Switch(
+                      value: menu.vegOnly,
+                      activeTrackColor: const Color(0xFF16A34A),
+                      activeThumbColor: Colors.white,
+                      inactiveThumbColor: Colors.white,
+                      inactiveTrackColor: const Color(0xFFE5E7EB),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onChanged: menu.setVegOnly,
+                    ),
                   ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryRail(List<Category> categories) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 10),
+      child: SizedBox(
+        height: 90,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          children: [
+            _categoryTile(null, 'All', Icons.grid_view_rounded),
+            ...categories.map(
+              (cat) =>
+                  _categoryTile(cat.id, cat.name, _getCategoryIcon(cat.name)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getCategoryIcon(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('start')) return Icons.restaurant_rounded;
+    if (n.contains('main')) return Icons.dinner_dining_rounded;
+    if (n.contains('bev') || n.contains('drink'))
+      return Icons.local_cafe_rounded;
+    if (n.contains('dessert') || n.contains('sweet')) return Icons.cake_rounded;
+    if (n.contains('pizza')) return Icons.local_pizza_rounded;
+    if (n.contains('burger')) return Icons.lunch_dining_rounded;
+    return Icons.fastfood_rounded;
+  }
+
+  Widget _categoryTile(int? id, String name, IconData icon) {
+    final selected = _selectedCategoryId == id;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategoryId = id),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: selected ? const Color(0xFFF45B15) : Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected
+                      ? const Color(0xFFF45B15)
+                      : const Color(0xFFECECEC),
+                  width: 1.5,
+                ),
+                boxShadow: selected
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x35F45B15),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Icon(
+                icon,
+                size: 26,
+                color: selected ? Colors.white : const Color(0xFFF45B15),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              name,
+              style: TextStyle(
+                color: const Color(0xFF1E2022),
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendedSection(List<Category> allCategories) {
+    final allAvailable = allCategories
+        .expand((c) => c.items)
+        .where((item) => item.isAvailable)
+        .toList();
+
+    if (allAvailable.isEmpty) return const SizedBox.shrink();
+
+    // Pick top/popular items across different categories so it's diverse
+    final List<MenuItem> diverseItems = [];
+    int round = 0;
+    while (diverseItems.length < 8 && round < 4) {
+      bool anyAdded = false;
+      for (var cat in allCategories) {
+        final availableInCat = cat.items.where((i) => i.isAvailable).toList();
+        if (round < availableInCat.length && diverseItems.length < 8) {
+          diverseItems.add(availableInCat[round]);
+          anyAdded = true;
+        }
+      }
+      if (!anyAdded) break;
+      round++;
+    }
+    final recommendedItems = diverseItems.isNotEmpty
+        ? diverseItems
+        : allAvailable.take(8).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Recommended for You',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E2022),
+                ),
+              ),
+              Text(
+                'Popular',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFFF45B15).withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 240,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            itemCount: recommendedItems.length,
+            itemBuilder: (context, index) {
+              return SizedBox(
+                width: 175,
+                child: MenuItemCard(
+                  item: recommendedItems[index],
+                  isGrid: true,
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Full Menu',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1E2022),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTablePinCard() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFECECEC)),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.group_add_rounded,
+              color: Color(0xFF9EA1A8),
+              size: 20,
+            ),
             const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Share Table PIN with friends',
+                style: TextStyle(
+                  color: Color(0xFF75787E),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
             InkWell(
-              borderRadius: BorderRadius.circular(8),
               onTap: () async {
                 await Clipboard.setData(ClipboardData(text: widget.roomCode));
                 if (!mounted) return;
@@ -568,19 +758,19 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
-                  vertical: 10,
+                  vertical: 6,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF8F2),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFB8E4D1)),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   widget.roomCode,
                   style: const TextStyle(
-                    color: Color(0xFF17885E),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF16A34A),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
                   ),
                 ),
               ),
@@ -592,65 +782,63 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   Widget _buildCategorySection(Category category) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        children: [
+    if (category.items.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_searchCtrl.text.isEmpty && _selectedCategoryId == null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
             child: Text(
               category.name,
               style: const TextStyle(
-                color: Color(0xFF263343),
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
+                color: Color(0xFF1E2022),
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.2,
               ),
             ),
           ),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final columns = constraints.maxWidth >= 760 ? 2 : 1;
-              final itemWidth =
-                  (constraints.maxWidth - (columns - 1) * 10) / columns;
-              return Wrap(
-                spacing: 10,
-                runSpacing: 4,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final int crossAxisCount = width >= 1200
+                ? 4
+                : width >= 800
+                ? 3
+                : width >= 500
+                ? 2
+                : 1;
+
+            if (crossAxisCount == 1) {
+              return Column(
+                children: category.items
+                    .map((item) => MenuItemCard(item: item, isGrid: false))
+                    .toList(),
+              );
+            }
+
+            final double itemWidth =
+                (width - 32 - (crossAxisCount - 1) * 12) / crossAxisCount;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
                 children: category.items
                     .map(
                       (item) => SizedBox(
                         width: itemWidth,
-                        child: MenuItemCard(item: item),
+                        child: MenuItemCard(item: item, isGrid: true),
                       ),
                     )
                     .toList(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRestaurantFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
-      child: Column(
-        children: [
-          const Divider(),
-          const SizedBox(height: 10),
-          Text(
-            'Sarjapur PetPooja  •  Table ${widget.tableNumber}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Color(0xFF777777), fontSize: 12),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Terms & Conditions     Privacy Policy',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF777777), fontSize: 12),
-          ),
-        ],
-      ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -723,7 +911,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   (route) => false,
                 );
               },
-              child: const Text('Table chhodo aur wapas jao'),
+              child: const Text('Exit Table'),
             ),
           ],
         ),

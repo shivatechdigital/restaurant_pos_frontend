@@ -5,9 +5,8 @@ import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../services/session_service.dart';
 import 'landing_screen.dart';
-import '../config/responsive.dart';
 
-class ThankYouScreen extends StatelessWidget {
+class ThankYouScreen extends StatefulWidget {
   final String tableNumber;
   final double amount;
   final String paymentMethod;
@@ -22,165 +21,160 @@ class ThankYouScreen extends StatelessWidget {
   });
 
   @override
+  State<ThankYouScreen> createState() => _ThankYouScreenState();
+}
+
+class _ThankYouScreenState extends State<ThankYouScreen> {
+  int _rating = 0;
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFE5092F), Color(0xFFC1082A), Color(0xFF8E1028)],
-          ),
+      backgroundColor: const Color(0xFFF9F9FB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Payment Successful',
+          style: TextStyle(color: Color(0xFF1E2022), fontWeight: FontWeight.w900, fontSize: 18),
         ),
-        child: SafeArea(
-          child: CustomerPage(
-            child: SingleChildScrollView(
-              padding: CustomerResponsive.pagePadding(context),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Success Animation (Static for now)
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check_circle,
-                      size: 80,
-                      color: Colors.white,
-                    ),
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: const Color(0xFFECECEC), height: 1),
+        ),
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500), // Web Responsiveness
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Success Animation / Icon
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFDCFCE7),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 24),
+                  child: const Icon(Icons.check_circle_rounded, size: 80, color: Color(0xFF16A34A)),
+                ),
+                const SizedBox(height: 24),
 
-                  const Text(
-                    'Thank You! 🎉',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Payment Successful',
-                    style: TextStyle(fontSize: 18, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 32),
+                const Text(
+                  'Thank You! 🎉',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Color(0xFF1E2022)),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Your payment has been received successfully.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Color(0xFF75787E), fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 32),
 
-                  // Payment Details Card
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 32),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Column(
-                      children: [
-                        _detailRow('Table', tableNumber),
-                        const Divider(color: Colors.white24),
-                        _detailRow(
-                          'Amount Paid',
-                          '₹${amount.toStringAsFixed(2)}',
-                        ),
-                        const Divider(color: Colors.white24),
-                        _detailRow('Payment Method', paymentMethod),
-                        const Divider(color: Colors.white24),
-                        _detailRow('Receipt ID', sessionId),
-                      ],
-                    ),
+                // Payment Details Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFECECEC)),
+                    boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 16, offset: Offset(0, 4))],
                   ),
-                  const SizedBox(height: 32),
-
-                  // Feedback prompt
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 32),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Aapka experience kaisa raha?',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(5, (index) {
-                            return IconButton(
-                              icon: Icon(
-                                Icons.star,
-                                color: Colors.yellow[300],
-                                size: 32,
-                              ),
-                              onPressed: () {
-                                // Phase 5 mein feedback save hoga
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '${index + 1} star diya! Thank you!',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              },
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
+                  child: Column(
+                    children: [
+                      _detailRow('Table Number', 'Table ${widget.tableNumber}'),
+                      const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(color: Color(0xFFECECEC), height: 1)),
+                      _detailRow('Amount Paid', '₹${widget.amount.toStringAsFixed(0)}', isBold: true),
+                      const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(color: Color(0xFFECECEC), height: 1)),
+                      _detailRow('Payment Method', widget.paymentMethod),
+                      const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(color: Color(0xFFECECEC), height: 1)),
+                      _detailRow('Receipt ID', widget.sessionId),
+                    ],
                   ),
-                  const SizedBox(height: 32),
+                ),
+                const SizedBox(height: 32),
 
-                  // Done Button
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 40),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          // Payment ho chuka hai, table free hai - purana session/cart clear karo
-                          await SessionService.clearSession();
-                          if (context.mounted) {
-                            context.read<CartProvider>().clear();
-                            context.read<OrderProvider>().resetForNewOrder();
-                          }
-                          if (!context.mounted) return;
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LandingScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFFE5092F),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(26),
-                          ),
-                        ),
-                        child: const Text(
-                          'Done ✓',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                // Feedback prompt
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFECECEC)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'How was your food & experience?',
+                        style: TextStyle(color: Color(0xFF1E2022), fontSize: 15, fontWeight: FontWeight.w800),
                       ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          return IconButton(
+                            icon: Icon(
+                              index < _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                              color: index < _rating ? const Color(0xFFF59E0B) : const Color(0xFFD1D5DB),
+                              size: 36,
+                            ),
+                            onPressed: () {
+                              setState(() => _rating = index + 1);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Thank you for your feedback!'),
+                                  backgroundColor: Color(0xFF16A34A),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Done Button
+                SizedBox(
+                  height: 54,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      // Payment ho chuka hai, table free hai - purana session/cart clear karo
+                      await SessionService.clearSession();
+                      if (context.mounted) {
+                        context.read<CartProvider>().clear();
+                        context.read<OrderProvider>().resetForNewOrder();
+                      }
+                      if (!context.mounted) return;
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LandingScreen()),
+                        (route) => false,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF45B15),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text(
+                      'Back to Home',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -188,26 +182,20 @@ class ThankYouScreen extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+  Widget _detailRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Color(0xFF75787E), fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(
+          value,
+          style: TextStyle(
+            color: isBold ? const Color(0xFFF45B15) : const Color(0xFF1E2022),
+            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+            fontSize: isBold ? 16 : 14,
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
