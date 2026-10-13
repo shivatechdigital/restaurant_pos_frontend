@@ -683,7 +683,7 @@ class _KDSDashboardState extends State<KDSDashboard> {
                 ],
               ),
             ),
-            if (order.status != 'served')
+            if (order.status != 'served' && order.status != 'ready')
               Padding(
                 padding: const EdgeInsets.fromLTRB(10, 2, 10, 10),
                 child: SizedBox(
@@ -921,21 +921,14 @@ class _KDSDashboardState extends State<KDSDashboard> {
       ),
     ),
   );
-  String _next(String status) => status == 'placed' || status == 'pending'
-      ? 'preparing'
-      : status == 'accepted' || status == 'preparing'
-      ? 'ready'
-      : 'served';
+  String _next(String status) =>
+      status == 'placed' || status == 'pending' ? 'preparing' : 'ready';
   IconData _nextIcon(String status) => status == 'placed' || status == 'pending'
       ? Icons.restaurant
-      : status == 'accepted' || status == 'preparing'
-      ? Icons.check
-      : Icons.room_service;
+      : Icons.check;
   String _nextLabel(String status) => status == 'placed' || status == 'pending'
       ? 'Start Preparing'
-      : status == 'accepted' || status == 'preparing'
-      ? 'Mark as Ready'
-      : 'Mark as Served';
+      : 'Mark as Ready';
   String _clock(DateTime date) =>
       '${date.hour % 12 == 0 ? 12 : date.hour % 12}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? 'PM' : 'AM'}';
   Widget _empty() => Center(

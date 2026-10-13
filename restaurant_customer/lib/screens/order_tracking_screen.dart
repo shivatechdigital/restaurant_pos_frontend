@@ -5,6 +5,7 @@ import '../providers/order_provider.dart';
 import '../models/order_model.dart';
 import '../widgets/order_status_stepper.dart';
 import 'payment_screen.dart';
+import 'settled_session_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final String sessionId;
@@ -50,6 +51,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   @override
   Widget build(BuildContext context) {
     final order = context.watch<OrderProvider>();
+    if (order.isSessionSettled) {
+      return SettledSessionScreen(
+        sessionId: widget.sessionId,
+        tableNumber: widget.tableNumber,
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
@@ -63,22 +70,41 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           children: [
             const Text(
               'Order Tracking',
-              style: TextStyle(color: Color(0xFF1E2022), fontWeight: FontWeight.w900, fontSize: 18),
+              style: TextStyle(
+                color: Color(0xFF1E2022),
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+              ),
             ),
             const SizedBox(height: 2),
             Text(
               'Table ${widget.tableNumber} • Live Status',
-              style: const TextStyle(color: Color(0xFF75787E), fontSize: 12, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Color(0xFF75787E),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
         actions: [
           // Order cancel button (sirf "placed" status mein)
-          if (order.customerSelfCancelEnabled && order.currentStatus == OrderStatus.placed)
+          if (order.customerSelfCancelEnabled &&
+              order.currentStatus == OrderStatus.placed)
             TextButton.icon(
               onPressed: () => _showCancelDialog(context, order),
-              icon: const Icon(Icons.cancel_outlined, color: Color(0xFFDC2626), size: 18),
-              label: const Text('Cancel', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w700)),
+              icon: const Icon(
+                Icons.cancel_outlined,
+                color: Color(0xFFDC2626),
+                size: 18,
+              ),
+              label: const Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Color(0xFFDC2626),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           const SizedBox(width: 8),
         ],
@@ -93,13 +119,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Status Stepper
                     OrderStatusStepper(currentStatus: order.currentStatus),
-                    
+
                     const SizedBox(height: 8),
 
                     // Status Highlight Card
@@ -138,7 +167,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 16, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -171,12 +206,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
               children: [
                 Text(
                   displayName,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   message,
-                  style: const TextStyle(color: Color(0xFF75787E), fontSize: 13, height: 1.4, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    color: Color(0xFF75787E),
+                    fontSize: 13,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -195,15 +239,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFECECEC)),
-        boxShadow: const [BoxShadow(color: Color(0x06000000), blurRadius: 10, offset: Offset(0, 3))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          _infoRow(Icons.receipt_long_rounded, 'Order ID', '#${order.currentOrderId ?? "---"}'),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Color(0xFFECECEC))),
+          _infoRow(
+            Icons.receipt_long_rounded,
+            'Order ID',
+            '#${order.currentOrderId ?? "---"}',
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1, color: Color(0xFFECECEC)),
+          ),
           _infoRow(Icons.table_restaurant_rounded, 'Table', widget.tableNumber),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: Color(0xFFECECEC))),
-          _infoRow(Icons.timer_outlined, 'Estimated Time', _getEstimatedTime(order.currentStatus)),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(height: 1, color: Color(0xFFECECEC)),
+          ),
+          _infoRow(
+            Icons.timer_outlined,
+            'Estimated Time',
+            _getEstimatedTime(order.currentStatus),
+          ),
         ],
       ),
     );
@@ -214,13 +278,30 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       children: [
         Container(
           padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(color: const Color(0xFFF9FAFB), borderRadius: BorderRadius.circular(6)),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(6),
+          ),
           child: Icon(icon, size: 18, color: const Color(0xFF75787E)),
         ),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Color(0xFF75787E), fontSize: 14, fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF75787E),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const Spacer(),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF1E2022))),
+        Text(
+          value,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 14,
+            color: Color(0xFF1E2022),
+          ),
+        ),
       ],
     );
   }
@@ -232,15 +313,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: const BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, -4))],
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 16,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🎉 Enjoy your meal!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E2022))),
+              const Text(
+                '🎉 Enjoy your meal!',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E2022),
+                ),
+              ),
               const SizedBox(height: 4),
-              const Text('Whenever you are ready, please proceed to pay.', style: TextStyle(color: Color(0xFF75787E), fontSize: 13)),
+              const Text(
+                'Whenever you are ready, please proceed to pay.',
+                style: TextStyle(color: Color(0xFF75787E), fontSize: 13),
+              ),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -249,12 +346,23 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                       height: 52,
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.restaurant_menu_rounded, size: 18),
-                        label: const Text('Add Items', style: TextStyle(fontWeight: FontWeight.w800)),
+                        icon: const Icon(
+                          Icons.restaurant_menu_rounded,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          'Add Items',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFFF45B15),
-                          side: const BorderSide(color: Color(0xFFF45B15), width: 1.5),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: const BorderSide(
+                            color: Color(0xFFF45B15),
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -265,15 +373,28 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                       height: 52,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => PaymentScreen(sessionId: widget.sessionId, tableNumber: widget.tableNumber)));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PaymentScreen(
+                                sessionId: widget.sessionId,
+                                tableNumber: widget.tableNumber,
+                              ),
+                            ),
+                          );
                         },
                         icon: const Icon(Icons.payments_rounded, size: 18),
-                        label: const Text('Pay Bill', style: TextStyle(fontWeight: FontWeight.w800)),
+                        label: const Text(
+                          'Pay Bill',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF16A34A),
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
@@ -291,7 +412,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: const BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, -4))],
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 16,
+              offset: Offset(0, -4),
+            ),
+          ],
         ),
         child: SafeArea(
           child: SizedBox(
@@ -303,12 +430,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                 Navigator.pop(context);
               },
               icon: const Icon(Icons.refresh_rounded, size: 20),
-              label: const Text('Order Again', style: TextStyle(fontWeight: FontWeight.w800)),
+              label: const Text(
+                'Order Again',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFF45B15),
                 foregroundColor: Colors.white,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -321,7 +453,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Color(0x0A000000), blurRadius: 16, offset: Offset(0, -4))],
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 16,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Row(
@@ -332,11 +470,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                 child: OutlinedButton.icon(
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                  label: const Text('Add Items', style: TextStyle(fontWeight: FontWeight.w800)),
+                  label: const Text(
+                    'Add Items',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFF45B15),
-                    side: const BorderSide(color: Color(0xFFF45B15), width: 1.5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    side: const BorderSide(
+                      color: Color(0xFFF45B15),
+                      width: 1.5,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -348,16 +494,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                 child: ElevatedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('🛎️ Waiter has been notified!'), backgroundColor: Color(0xFFF45B15)),
+                      const SnackBar(
+                        content: Text('🛎️ Waiter has been notified!'),
+                        backgroundColor: Color(0xFFF45B15),
+                      ),
                     );
                   },
                   icon: const Icon(Icons.room_service_rounded, size: 18),
-                  label: const Text('Call Waiter', style: TextStyle(fontWeight: FontWeight.w800)),
+                  label: const Text(
+                    'Call Waiter',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E2022),
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -381,19 +535,37 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             Text('Cancel Order?'),
           ],
         ),
-        content: const Text('Are you sure you want to cancel this order? Once it reaches the kitchen, it cannot be cancelled.'),
+        content: const Text(
+          'Are you sure you want to cancel this order? Once it reaches the kitchen, it cannot be cancelled.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('No, Keep it', style: TextStyle(color: Color(0xFF75787E)))),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'No, Keep it',
+              style: TextStyle(color: Color(0xFF75787E)),
+            ),
+          ),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
               final success = await order.cancelOrder();
               if (!success && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(order.error), backgroundColor: const Color(0xFFDC2626)));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(order.error),
+                    backgroundColor: const Color(0xFFDC2626),
+                  ),
+                );
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
-            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+            child: const Text(
+              'Yes, Cancel',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -402,36 +574,56 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case OrderStatus.placed: return const Color(0xFF3B82F6);
-      case OrderStatus.accepted: return const Color(0xFF6366F1);
-      case OrderStatus.preparing: return const Color(0xFFF59E0B);
-      case OrderStatus.ready: return const Color(0xFF10B981);
-      case OrderStatus.served: return const Color(0xFF16A34A);
-      case OrderStatus.cancelled: return const Color(0xFFDC2626);
-      default: return const Color(0xFF9CA3AF);
+      case OrderStatus.placed:
+        return const Color(0xFF3B82F6);
+      case OrderStatus.accepted:
+        return const Color(0xFF6366F1);
+      case OrderStatus.preparing:
+        return const Color(0xFFF59E0B);
+      case OrderStatus.ready:
+        return const Color(0xFF10B981);
+      case OrderStatus.served:
+        return const Color(0xFF16A34A);
+      case OrderStatus.cancelled:
+        return const Color(0xFFDC2626);
+      default:
+        return const Color(0xFF9CA3AF);
     }
   }
 
   IconData _getStatusIcon(String status) {
     switch (status) {
-      case OrderStatus.placed: return Icons.receipt_long_rounded;
-      case OrderStatus.accepted: return Icons.thumb_up_rounded;
-      case OrderStatus.preparing: return Icons.soup_kitchen_rounded;
-      case OrderStatus.ready: return Icons.room_service_rounded;
-      case OrderStatus.served: return Icons.celebration_rounded;
-      case OrderStatus.cancelled: return Icons.cancel_rounded;
-      default: return Icons.hourglass_empty_rounded;
+      case OrderStatus.placed:
+        return Icons.receipt_long_rounded;
+      case OrderStatus.accepted:
+        return Icons.thumb_up_rounded;
+      case OrderStatus.preparing:
+        return Icons.soup_kitchen_rounded;
+      case OrderStatus.ready:
+        return Icons.room_service_rounded;
+      case OrderStatus.served:
+        return Icons.celebration_rounded;
+      case OrderStatus.cancelled:
+        return Icons.cancel_rounded;
+      default:
+        return Icons.hourglass_empty_rounded;
     }
   }
 
   String _getEstimatedTime(String status) {
     switch (status) {
-      case OrderStatus.placed: return '15-20 min';
-      case OrderStatus.accepted: return '12-18 min';
-      case OrderStatus.preparing: return '5-10 min';
-      case OrderStatus.ready: return '1-2 min';
-      case OrderStatus.served: return 'Done! ✅';
-      default: return '---';
+      case OrderStatus.placed:
+        return '15-20 min';
+      case OrderStatus.accepted:
+        return '12-18 min';
+      case OrderStatus.preparing:
+        return '5-10 min';
+      case OrderStatus.ready:
+        return '1-2 min';
+      case OrderStatus.served:
+        return 'Done! ✅';
+      default:
+        return '---';
     }
   }
 }

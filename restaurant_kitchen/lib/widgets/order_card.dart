@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/kitchen_order_model.dart';
 import 'live_timer_widget.dart';
 
@@ -27,13 +28,13 @@ class OrderCard extends StatelessWidget {
             color: order.isVeryUrgent
                 ? Colors.red
                 : order.isUrgent
-                    ? Colors.orange
-                    : Colors.grey[200]!,
+                ? Colors.orange
+                : Colors.grey[200]!,
             width: order.isUrgent ? 2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-                color: order.isUrgent
+              color: order.isUrgent
                   ? Colors.red.withValues(alpha: 0.1)
                   : Colors.black.withValues(alpha: 0.05),
               blurRadius: 8,
@@ -49,15 +50,18 @@ class OrderCard extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: _headerColor(),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(13)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(13),
+                ),
               ),
               child: Row(
                 children: [
                   // Table Number
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
@@ -77,7 +81,9 @@ class OrderCard extends StatelessWidget {
                   if (order.isVeryUrgent)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(4),
@@ -85,15 +91,18 @@ class OrderCard extends StatelessWidget {
                       child: const Text(
                         '🔥 URGENT',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     )
                   else if (order.isUrgent)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange,
                         borderRadius: BorderRadius.circular(4),
@@ -101,9 +110,10 @@ class OrderCard extends StatelessWidget {
                       child: const Text(
                         '⚠️ LATE',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold),
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
 
@@ -125,44 +135,50 @@ class OrderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Items list (max 3 dikhao)
-                  ...order.items.take(3).map((item) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Row(
-                          children: [
-                            Text(
-                              '${item.quantity}×',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Color(0xFF1B5E20),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                item.name,
-                                style: const TextStyle(fontSize: 14),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (item.modifiers.isNotEmpty)
+                  ...order.items
+                      .take(3)
+                      .map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
                               Text(
-                                '+${item.modifiers.length}',
-                                style: TextStyle(
-                                    color: Colors.orange[700],
-                                    fontSize: 11),
+                                '${item.quantity}×',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Color(0xFF1B5E20),
+                                ),
                               ),
-                          ],
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  item.name,
+                                  style: const TextStyle(fontSize: 14),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (item.modifiers.isNotEmpty)
+                                Text(
+                                  '+${item.modifiers.length}',
+                                  style: TextStyle(
+                                    color: Colors.orange[700],
+                                    fontSize: 11,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      )),
+                      ),
                   if (order.items.length > 3)
                     Text(
                       '+${order.items.length - 3} more items',
                       style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic),
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
 
                   // Special Instructions
@@ -176,14 +192,19 @@ class OrderCard extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.note,
-                              size: 14, color: Colors.orange),
+                          const Icon(
+                            Icons.note,
+                            size: 14,
+                            color: Colors.orange,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               order.notes!,
                               style: const TextStyle(
-                                  fontSize: 12, color: Colors.orange),
+                                fontSize: 12,
+                                color: Colors.orange,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -198,9 +219,7 @@ class OrderCard extends StatelessWidget {
             // ---- QUICK ACTION BUTTONS ----
             Container(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              child: Row(
-                children: _getActionButtons(),
-              ),
+              child: Row(children: _getActionButtons()),
             ),
           ],
         ),
@@ -231,23 +250,30 @@ class OrderCard extends StatelessWidget {
         return [
           _actionBtn('✅ Accept', Colors.green, () => onQuickAction('accepted')),
           const SizedBox(width: 8),
-          _actionBtn('🔥 Start', Colors.orange, () => onQuickAction('preparing')),
+          _actionBtn(
+            '🔥 Start',
+            Colors.orange,
+            () => onQuickAction('preparing'),
+          ),
         ];
       case 'accepted':
         return [
-          _actionBtn('🔥 Start Cooking', Colors.orange,
-              () => onQuickAction('preparing')),
+          _actionBtn(
+            '🔥 Start Cooking',
+            Colors.orange,
+            () => onQuickAction('preparing'),
+          ),
         ];
       case 'preparing':
         return [
-          _actionBtn('✅ Mark Ready', Colors.green,
-              () => onQuickAction('ready')),
+          _actionBtn(
+            '✅ Mark Ready',
+            Colors.green,
+            () => onQuickAction('ready'),
+          ),
         ];
       case 'ready':
-        return [
-          _actionBtn('🍽️ Served', Colors.blue,
-              () => onQuickAction('served')),
-        ];
+        return [];
       default:
         return [];
     }
@@ -261,8 +287,7 @@ class OrderCard extends StatelessWidget {
           backgroundColor: color,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 10),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
         ),
         child: Text(

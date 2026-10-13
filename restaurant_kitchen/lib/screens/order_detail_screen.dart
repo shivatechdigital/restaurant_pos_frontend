@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/kitchen_order_model.dart';
 import '../providers/kitchen_provider.dart';
 import '../services/api_service.dart';
@@ -38,7 +39,9 @@ class OrderDetailScreen extends StatelessWidget {
                         Text(
                           'Table ${order.tableNumber}',
                           style: const TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold),
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         StatusBadge(status: order.status),
                       ],
@@ -52,30 +55,37 @@ class OrderDetailScreen extends StatelessWidget {
                           '${order.minutesAgo} minutes ago',
                           style: TextStyle(
                             color: order.isUrgent ? Colors.red : Colors.grey,
-                            fontWeight:
-                                order.isUrgent ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: order.isUrgent
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                         ),
                         const SizedBox(width: 16),
                         const Icon(Icons.person, size: 16, color: Colors.grey),
                         const SizedBox(width: 4),
-                        Text(order.orderedByName ?? 'Customer',
-                            style: TextStyle(color: Colors.grey[600])),
+                        Text(
+                          order.orderedByName ?? 'Customer',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
                       ],
                     ),
                     if (order.notes != null && order.notes!.isNotEmpty) ...[
                       const Divider(),
                       Row(
                         children: [
-                          const Icon(Icons.note,
-                              size: 16, color: Colors.orange),
+                          const Icon(
+                            Icons.note,
+                            size: 16,
+                            color: Colors.orange,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               'Note: ${order.notes}',
                               style: const TextStyle(
-                                  color: Colors.orange,
-                                  fontWeight: FontWeight.w500),
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
@@ -88,87 +98,104 @@ class OrderDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Items
-            const Text('Items to Prepare',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              'Items to Prepare',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
-            ...order.items.map((item) => Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFB71C1C),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '${item.quantity}×',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                item.name,
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (item.modifiers.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 6,
-                            children: item.modifiers
-                                .map((m) => Chip(
-                                      label: Text(m,
-                                          style:
-                                              const TextStyle(fontSize: 12)),
-                                      backgroundColor: Colors.orange[50],
-                                      visualDensity: VisualDensity.compact,
-                                    ))
-                                .toList(),
-                          ),
-                        ],
-                        if (item.specialInstructions != null &&
-                            item.specialInstructions!.isNotEmpty) ...[
-                          const SizedBox(height: 6),
+            ...order.items.map(
+              (item) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: Colors.yellow[50],
+                              color: const Color(0xFFB71C1C),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.warning_amber,
-                                    size: 16, color: Colors.orange),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    item.specialInstructions!,
-                                    style: const TextStyle(
-                                        color: Colors.orange, fontSize: 13),
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              '${item.quantity}×',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],
+                      ),
+                      if (item.modifiers.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 6,
+                          children: item.modifiers
+                              .map(
+                                (m) => Chip(
+                                  label: Text(
+                                    m,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                  backgroundColor: Colors.orange[50],
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              )
+                              .toList(),
+                        ),
                       ],
-                    ),
+                      if (item.specialInstructions != null &&
+                          item.specialInstructions!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.yellow[50],
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber,
+                                size: 16,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  item.specialInstructions!,
+                                  style: const TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                )),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 24),
 
@@ -207,10 +234,7 @@ class OrderDetailScreen extends StatelessWidget {
           if (context.mounted) Navigator.pop(context);
         });
       case 'ready':
-        return _bigBtn('🍽️ Mark as Served', Colors.blue, () async {
-          await kitchen.updateStatus(order.orderId, 'served');
-          if (context.mounted) Navigator.pop(context);
-        });
+        return const SizedBox.shrink();
       case 'served':
         return OutlinedButton.icon(
           onPressed: () => _showRecallDialog(context, kitchen),
@@ -221,7 +245,8 @@ class OrderDetailScreen extends StatelessWidget {
             side: const BorderSide(color: Colors.orange),
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       default:
@@ -229,8 +254,7 @@ class OrderDetailScreen extends StatelessWidget {
     }
   }
 
-  void _showRecallDialog(
-      BuildContext context, KitchenProvider kitchen) {
+  void _showRecallDialog(BuildContext context, KitchenProvider kitchen) {
     final reasonCtrl = TextEditingController();
 
     showDialog(
@@ -241,8 +265,7 @@ class OrderDetailScreen extends StatelessWidget {
           children: [
             Icon(Icons.undo, color: Colors.orange),
             SizedBox(width: 8),
-            Text('Recall Order?',
-                style: TextStyle(color: Colors.white)),
+            Text('Recall Order?', style: TextStyle(color: Colors.white)),
           ],
         ),
         content: Column(
@@ -260,7 +283,8 @@ class OrderDetailScreen extends StatelessWidget {
                 hintText: 'e.g., Customer complaint, wrong item...',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],
@@ -268,8 +292,7 @@ class OrderDetailScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -290,10 +313,11 @@ class OrderDetailScreen extends StatelessWidget {
                 if (context.mounted) Navigator.pop(context);
               }
             },
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange),
-            child: const Text('Recall 🔥',
-                style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text(
+              'Recall 🔥',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -309,12 +333,14 @@ class OrderDetailScreen extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
-        child: Text(label,
-            style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/session_service.dart';
 import '../models/order_model.dart';
 import '../models/payment_model.dart';
 import '../services/api_service.dart';
@@ -16,9 +17,11 @@ class OrderProvider extends ChangeNotifier {
   String _statusMessage = '';
   bool _isLoading = false;
   String _error = '';
+  bool _socketListenersReady = false;
 
   // Session
   String? _sessionId;
+  bool _isSessionSettled = false;
 
   // Bill
   BillData? _bill;
@@ -34,6 +37,7 @@ class OrderProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get error => _error;
   String? get sessionId => _sessionId;
+  bool get isSessionSettled => _isSessionSettled;
   BillData? get bill => _bill;
   List<OrderData> get orderHistory => _orderHistory;
   bool get customerSelfCancelEnabled => _customerSelfCancelEnabled;
@@ -44,6 +48,10 @@ class OrderProvider extends ChangeNotifier {
   // ---- SETUP ----
 
   void setSessionId(String id) {
+    if (_sessionId != id) {
+      _bill = null;
+      _isSessionSettled = false;
+    }
     _sessionId = id;
     notifyListeners();
   }
@@ -64,6 +72,8 @@ class OrderProvider extends ChangeNotifier {
 
   // Socket.io listeners setup karo
   void setupSocketListeners() {
+    if (_socketListenersReady) return;
+
     final socket = SocketService();
 
     // Order status update (Kitchen se aayega)
@@ -92,19 +102,43 @@ class OrderProvider extends ChangeNotifier {
     });
 
     // Bill generated (Waiter ne bill bheja)
-    socket.on('bill_generated', (data) {
+    socket.on('bill_generated', (data) async {
       final map = data is Map ? Map<String, dynamic>.from(data) : {};
       if (map['bill'] != null) {
-        _bill = BillData.fromJson(map['bill']);
-        notifyListeners();
+        await _applyBill(BillData.fromJson(map['bill']));
       }
     });
 
     // Payment success
     socket.on('payment_success', (data) {
-      // Phase 4 mein handle hoga
-      notifyListeners();
+      loadBill();
     });
+    _socketListenersReady = true;
+  }
+
+  Future<void> _applyBill(BillData bill) async {
+    _bill = bill;
+    _isSessionSettled =
+        bill.items.isNotEmpty &&
+        bill.finalAmount > 0.01 &&
+        bill.outstandingAmount <= 0.01;
+    if (_isSessionSettled && _sessionId != null) {
+      await SessionService.markSettled(_sessionId!);
+    }
+    notifyListeners();
+  }
+
+  void trackOrder(
+    OrderData order, {
+    required String restaurantId,
+    required int tableId,
+  }) {
+    _currentOrderId = order.orderId;
+    _currentStatus = order.status;
+    _statusMessage = order.statusMessage ?? '';
+    SocketService().connect(restaurantId, tableId.toString());
+    setupSocketListeners();
+    notifyListeners();
   }
 
   // ---- PLACE ORDER ----
@@ -115,6 +149,12 @@ class OrderProvider extends ChangeNotifier {
     required List<Map<String, dynamic>> items,
     String? notes,
   }) async {
+    if (_isSessionSettled) {
+      _error = 'This table session is already paid. Scan the table QR again to order.';
+      notifyListeners();
+      return false;
+    }
+
     _isLoading = true;
     _error = '';
     notifyListeners();
@@ -205,8 +245,7 @@ class OrderProvider extends ChangeNotifier {
     try {
       final result = await _api.getBill(_sessionId!);
       if (result['success'] == true) {
-        _bill = BillData.fromJson(result['data']);
-        notifyListeners();
+        await _applyBill(BillData.fromJson(result['data']));
       }
     } catch (e) {
       debugPrint('Bill load error: $e');

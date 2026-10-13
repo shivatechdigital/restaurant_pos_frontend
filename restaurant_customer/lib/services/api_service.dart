@@ -86,6 +86,25 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
+  Future<Map<String, dynamic>> joinTable({
+    required int tableId,
+    required String restaurantId,
+    required String phone,
+    required String roomCode,
+  }) async {
+    final res = await http.post(
+      Uri.parse(ApiConfig.joinTable),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'table_id': tableId,
+        'restaurant_id': int.tryParse(restaurantId),
+        'phone': phone,
+        'room_code': roomCode,
+      }),
+    );
+    return _decode(res);
+  }
+
   // ---- MENU ----
 
   Future<Map<String, dynamic>> getMenu(String restaurantId) async {

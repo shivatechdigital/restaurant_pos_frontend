@@ -7,6 +7,7 @@ class SessionService {
   static const _kSessionId = 'session_session_id';
   static const _kRoomCode = 'session_room_code';
   static const _kSessionType = 'session_type';
+  static const _kSessionSettled = 'session_settled';
   static const _kOrderType = 'session_order_type';
   static const _kPickupToken = 'session_pickup_token';
 
@@ -25,6 +26,7 @@ class SessionService {
     await prefs.setString(_kSessionId, sessionId);
     await prefs.setString(_kRoomCode, roomCode);
     await prefs.setString(_kSessionType, 'dine_in');
+    await prefs.setBool(_kSessionSettled, false);
   }
 
   static Future<void> saveOffPremiseSession({
@@ -38,6 +40,7 @@ class SessionService {
     await prefs.remove(_kTableNumber);
     await prefs.remove(_kRoomCode);
     await prefs.setString(_kSessionType, 'off_premise');
+    await prefs.setBool(_kSessionSettled, false);
     await prefs.setString(_kSessionId, sessionId);
     await prefs.setString(_kOrderType, orderType);
     if (pickupToken != null) {
@@ -80,7 +83,16 @@ class SessionService {
       'table_number': tableNumber,
       'session_id': sessionId,
       'room_code': roomCode,
+      'settled': prefs.getBool(_kSessionSettled) ?? false,
     };
+  }
+
+  static Future<void> markSettled(String sessionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString(_kSessionType) == 'dine_in' &&
+        prefs.getString(_kSessionId) == sessionId) {
+      await prefs.setBool(_kSessionSettled, true);
+    }
   }
 
   // Logout / table release hone par session clear karo
@@ -92,6 +104,7 @@ class SessionService {
     await prefs.remove(_kSessionId);
     await prefs.remove(_kRoomCode);
     await prefs.remove(_kSessionType);
+    await prefs.remove(_kSessionSettled);
     await prefs.remove(_kOrderType);
     await prefs.remove(_kPickupToken);
   }

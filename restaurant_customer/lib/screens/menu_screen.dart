@@ -13,6 +13,7 @@ import 'cart_screen.dart';
 import 'landing_screen.dart';
 import 'order_history_screen.dart';
 import 'payment_screen.dart';
+import 'settled_session_screen.dart';
 
 class MenuScreen extends StatefulWidget {
   final String restaurantId;
@@ -44,7 +45,9 @@ class _MenuScreenState extends State<MenuScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<MenuProvider>().loadMenu(widget.restaurantId);
-      context.read<OrderProvider>().setSessionId(widget.sessionId);
+      final order = context.read<OrderProvider>();
+      order.setSessionId(widget.sessionId);
+      order.setupSocketListeners();
     });
   }
 
@@ -52,6 +55,13 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget build(BuildContext context) {
     final menu = context.watch<MenuProvider>();
     final cart = context.watch<CartProvider>();
+    final order = context.watch<OrderProvider>();
+    if (order.isSessionSettled) {
+      return SettledSessionScreen(
+        sessionId: widget.sessionId,
+        tableNumber: widget.tableNumber,
+      );
+    }
     final filteredCategories = menu.filteredCategories;
 
     final selectedCategories = filteredCategories
@@ -852,6 +862,8 @@ class _MenuScreenState extends State<MenuScreen> {
           builder: (_) => OrderHistoryScreen(
             tableNumber: widget.tableNumber,
             roomCode: widget.roomCode,
+            restaurantId: widget.restaurantId,
+            tableId: widget.tableId,
           ),
         ),
       );

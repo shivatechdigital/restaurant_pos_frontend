@@ -7,14 +7,20 @@ import '../providers/cart_provider.dart';
 import '../providers/menu_provider.dart';
 import '../models/order_model.dart';
 import 'payment_screen.dart';
+import 'order_tracking_screen.dart';
+import 'settled_session_screen.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
   final String tableNumber;
   final String roomCode;
+  final String restaurantId;
+  final int tableId;
 
   const OrderHistoryScreen({
     super.key,
     required this.tableNumber,
+    required this.restaurantId,
+    required this.tableId,
     this.roomCode = '',
   });
 
@@ -24,7 +30,6 @@ class OrderHistoryScreen extends StatefulWidget {
 
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   bool _loading = true;
-  int _activeTab = 0; // 0: Previous Orders, 1: Favourites
 
   @override
   void initState() {
@@ -41,6 +46,12 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Widget build(BuildContext context) {
     final order = context.watch<OrderProvider>();
     final orders = order.orderHistory;
+    if (order.isSessionSettled) {
+      return SettledSessionScreen(
+        sessionId: order.sessionId ?? '',
+        tableNumber: widget.tableNumber,
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),
@@ -106,7 +117,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               width: double.infinity,
               child: Column(
                 children: [
-                  // Interactive Toggle: Previous Orders vs Favourites
                   Container(
                     margin: const EdgeInsets.fromLTRB(16, 16, 16, 10),
                     padding: const EdgeInsets.all(4),
@@ -115,98 +125,43 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0xFFECECEC)),
                     ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _activeTab = 0),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: _activeTab == 0
-                                    ? const Color(0xFFF45B15)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                'Previous Orders',
-                                style: TextStyle(
-                                  color: _activeTab == 0
-                                      ? Colors.white
-                                      : const Color(0xFF75787E),
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF45B15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'Previous Orders',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => setState(() => _activeTab = 1),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              decoration: BoxDecoration(
-                                color: _activeTab == 1
-                                    ? const Color(0xFFF45B15)
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              alignment: Alignment.center,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.favorite_rounded,
-                                    size: 16,
-                                    color: _activeTab == 1
-                                        ? Colors.white
-                                        : const Color(0xFFF45B15),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Favourites',
-                                    style: TextStyle(
-                                      color: _activeTab == 1
-                                          ? Colors.white
-                                          : const Color(0xFF75787E),
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
 
                   Expanded(
-                    child: _activeTab == 0
-                        ? (orders.isEmpty
-                              ? _buildEmptyState()
-                              : RefreshIndicator(
-                                  color: const Color(0xFFF45B15),
-                                  onRefresh: () => context
-                                      .read<OrderProvider>()
-                                      .loadOrderHistory(),
-                                  child: ListView.separated(
-                                    padding: const EdgeInsets.all(16),
-                                    itemCount: orders.length,
-                                    separatorBuilder: (_, __) =>
-                                        const SizedBox(height: 12),
-                                    itemBuilder: (context, index) {
-                                      final orderData = orders[index];
-                                      return _buildOrderCard(orderData);
-                                    },
-                                  ),
-                                ))
-                        : _buildFavouritesTab(orders),
+                    child: orders.isEmpty
+                        ? _buildEmptyState()
+                        : RefreshIndicator(
+                            color: const Color(0xFFF45B15),
+                            onRefresh: () => context
+                                .read<OrderProvider>()
+                                .loadOrderHistory(),
+                            child: ListView.separated(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: orders.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (context, index) {
+                                final orderData = orders[index];
+                                return _buildOrderCard(orderData);
+                              },
+                            ),
+                          ),
                   ),
                 ],
               ),
@@ -293,7 +248,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _showOrderDetailsDialog(orderData),
+        onTap: () => _openOrderTracking(orderData),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -467,7 +422,27 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     );
   }
 
-  // ---- ORDER DETAILS DIALOG (Item inspection & Pay Online) ----
+  void _openOrderTracking(OrderData orderData) {
+    final orderProvider = context.read<OrderProvider>();
+    orderProvider.trackOrder(
+      orderData,
+      restaurantId: widget.restaurantId,
+      tableId: widget.tableId,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrderTrackingScreen(
+          sessionId: orderProvider.sessionId ?? '',
+          tableNumber: widget.tableNumber,
+          restaurantId: widget.restaurantId,
+          tableId: widget.tableId,
+        ),
+      ),
+    );
+  }
+
+  // ---- ORDER DETAILS DIALOG ----
   void _showOrderDetailsDialog(OrderData orderData) {
     showModalBottomSheet(
       context: context,
@@ -605,222 +580,27 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      for (var item in orderData.items) {
-                        _reorderItem(item);
-                      }
-                    },
-                    icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('Reorder All'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFF45B15),
-                      side: const BorderSide(color: Color(0xFFF45B15)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                for (var item in orderData.items) {
+                  _reorderItem(item);
+                }
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: const Text('Reorder All'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFF45B15),
+                side: const BorderSide(color: Color(0xFFF45B15)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      final sessionId = context.read<OrderProvider>().sessionId;
-                      if (sessionId != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PaymentScreen(
-                              sessionId: sessionId,
-                              tableNumber: widget.tableNumber,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.payment_rounded, size: 18),
-                    label: const Text('Pay Online'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF16A34A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  // ---- FAVOURITES TAB (Issue 5: Direct Add to Cart) ----
-  Widget _buildFavouritesTab(List<OrderData> orders) {
-    // Collect all unique menu items from past orders or menu
-    final menuCategories = context.watch<MenuProvider>().categories;
-    final List<MenuItem> allMenuItems = menuCategories
-        .expand((c) => c.items)
-        .where((i) => i.isAvailable)
-        .toList();
-
-    // Past ordered item names set
-    final pastNames = orders
-        .expand((o) => o.items)
-        .map((i) => i.name.trim().toLowerCase())
-        .toSet();
-    final favouriteItems = allMenuItems
-        .where((m) => pastNames.contains(m.name.trim().toLowerCase()))
-        .toList();
-
-    // If no past orders yet, offer popular items as starter favourites
-    final displayItems = favouriteItems.isNotEmpty
-        ? favouriteItems
-        : allMenuItems.take(6).toList();
-
-    if (displayItems.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.favorite_border_rounded,
-                size: 48,
-                color: Color(0xFF9EA1A8),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'No Favourites Yet',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Items you order frequently will appear here for fast 1-click reorder.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF75787E)),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final cart = context.watch<CartProvider>();
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: displayItems.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final item = displayItems[index];
-        final qty = cart.getItemQty(item.id);
-
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFECECEC)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x06000000),
-                blurRadius: 10,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  color: const Color(0xFFFFF2EB),
-                  child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          item.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.restaurant_rounded,
-                            color: Color(0xFFF45B15),
-                          ),
-                        )
-                      : const Icon(
-                          Icons.restaurant_rounded,
-                          color: Color(0xFFF45B15),
-                        ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                        color: Color(0xFF1E2022),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${item.price.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
-                        color: Color(0xFFF45B15),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () {
-                  cart.addItem(menuItem: item);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${item.name} added to cart!'),
-                      backgroundColor: const Color(0xFF16A34A),
-                      duration: const Duration(seconds: 1),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: Text(qty > 0 ? '$qty in Cart' : 'ADD'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF45B15),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 

@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../services/session_service.dart';
 import 'order_tracking_screen.dart';
 import 'off_premise_order_screen.dart';
+import 'settled_session_screen.dart';
 
 class CartScreen extends StatefulWidget {
   final int? tableId;
@@ -97,6 +98,13 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final order = context.watch<OrderProvider>();
+    if (order.isSessionSettled && !_isOffPremiseOrder) {
+      return SettledSessionScreen(
+        sessionId: widget.sessionId ?? '',
+        tableNumber: widget.tableNumber,
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9FB),

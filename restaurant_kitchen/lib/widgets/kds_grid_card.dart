@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/kitchen_order_model.dart';
 import 'live_timer_widget.dart';
 
@@ -6,11 +7,7 @@ class KDSGridCard extends StatelessWidget {
   final KitchenOrder order;
   final Function(String) onAction;
 
-  const KDSGridCard({
-    super.key,
-    required this.order,
-    required this.onAction,
-  });
+  const KDSGridCard({super.key, required this.order, required this.onAction});
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +19,8 @@ class KDSGridCard extends StatelessWidget {
           color: order.isVeryUrgent
               ? Colors.red
               : order.isUrgent
-                  ? Colors.orange
-                  : Colors.grey[300]!,
+              ? Colors.orange
+              : Colors.grey[300]!,
           width: order.isUrgent ? 2.5 : 1,
         ),
         boxShadow: [
@@ -43,8 +40,9 @@ class KDSGridCard extends StatelessWidget {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: _headerColor(),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(11)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(11),
+              ),
             ),
             child: Row(
               children: [
@@ -74,52 +72,56 @@ class KDSGridCard extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               child: ListView(
                 children: [
-                  ...order.items.map((item) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 3),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${item.quantity}× ',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFB71C1C),
-                                fontSize: 14,
-                              ),
+                  ...order.items.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${item.quantity}× ',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFB71C1C),
+                              fontSize: 14,
                             ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.name,
-                                    style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  if (item.modifiers.isNotEmpty)
-                                    Text(
-                                      item.modifiers.join(', '),
-                                      style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.orange[700]),
+                                ),
+                                if (item.modifiers.isNotEmpty)
+                                  Text(
+                                    item.modifiers.join(', '),
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.orange[700],
                                     ),
-                                  if (item.specialInstructions != null &&
-                                      item.specialInstructions!.isNotEmpty)
-                                    Text(
-                                      '⚠️ ${item.specialInstructions}',
-                                      style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.w500),
+                                  ),
+                                if (item.specialInstructions != null &&
+                                    item.specialInstructions!.isNotEmpty)
+                                  Text(
+                                    '⚠️ ${item.specialInstructions}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
-                          ],
-                        ),
-                      )),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   if (order.notes != null && order.notes!.isNotEmpty)
                     Container(
                       margin: const EdgeInsets.only(top: 6),
@@ -131,7 +133,9 @@ class KDSGridCard extends StatelessWidget {
                       child: Text(
                         '📝 ${order.notes}',
                         style: const TextStyle(
-                            fontSize: 11, color: Colors.orange),
+                          fontSize: 11,
+                          color: Colors.orange,
+                        ),
                       ),
                     ),
                 ],
@@ -140,10 +144,7 @@ class KDSGridCard extends StatelessWidget {
           ),
 
           // ---- ACTION BUTTON ----
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: _getActionButton(),
-          ),
+          Padding(padding: const EdgeInsets.all(8), child: _getActionButton()),
         ],
       ),
     );
@@ -186,10 +187,7 @@ class KDSGridCard extends StatelessWidget {
         nextStatus = 'ready';
         break;
       case 'ready':
-        label = '🍽️ Served';
-        color = Colors.blue;
-        nextStatus = 'served';
-        break;
+        return const SizedBox.shrink();
       default:
         return const SizedBox();
     }
@@ -202,13 +200,13 @@ class KDSGridCard extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 0,
         ),
-        child: Text(label,
-            style:
-                const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        child: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
       ),
     );
   }

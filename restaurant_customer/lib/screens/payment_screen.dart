@@ -420,53 +420,81 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
 
                       const SizedBox(height: 24),
-                      const Text(
-                        'Payment Method',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E2022),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Pay at restaurant
-                      _paymentTile(
-                        icon: Icons.storefront_rounded,
-                        title: 'Pay at Restaurant',
-                        subtitle: 'Pay at counter after your meal',
-                        iconBg: const Color(0xFFFFF2EB),
-                        iconColor: const Color(0xFFF45B15),
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please pay at the counter.'),
+                      if (bill.outstandingAmount <= 0.01)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: Color(0xFF16A34A),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Bill paid: ₹${bill.paidAmount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    color: Color(0xFF166534),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else ...[
+                        const Text(
+                          'Payment Method',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E2022),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // UPI Payment
-                      _paymentTile(
-                        icon: Icons.qr_code_scanner_rounded,
-                        title: 'UPI Payment',
-                        subtitle: 'Pay using any UPI app',
-                        iconBg: const Color(0xFFE0F2FE),
-                        iconColor: const Color(0xFF0284C7),
-                        onTap: () =>
-                            _processUpi(context, order, bill.outstandingAmount),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Card Payment
-                      _paymentTile(
-                        icon: Icons.credit_card_rounded,
-                        title: 'Card Payment',
-                        subtitle: 'Credit/Debit Card',
-                        iconBg: const Color(0xFFF3E8FF),
-                        iconColor: const Color(0xFF9333EA),
-                        onTap: () =>
-                            _processUpi(context, order, bill.outstandingAmount),
-                      ),
+                        const SizedBox(height: 12),
+                        _paymentTile(
+                          icon: Icons.storefront_rounded,
+                          title: 'Pay at Restaurant',
+                          subtitle: 'Pay at counter after your meal',
+                          iconBg: const Color(0xFFFFF2EB),
+                          iconColor: const Color(0xFFF45B15),
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please pay at the counter.'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _paymentTile(
+                          icon: Icons.qr_code_scanner_rounded,
+                          title: 'UPI Payment',
+                          subtitle: 'Pay using any UPI app',
+                          iconBg: const Color(0xFFE0F2FE),
+                          iconColor: const Color(0xFF0284C7),
+                          onTap: () => _processUpi(
+                            context,
+                            order,
+                            bill.outstandingAmount,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _paymentTile(
+                          icon: Icons.credit_card_rounded,
+                          title: 'Card Payment',
+                          subtitle: 'Credit/Debit Card',
+                          iconBg: const Color(0xFFF3E8FF),
+                          iconColor: const Color(0xFF9333EA),
+                          onTap: () => _processUpi(
+                            context,
+                            order,
+                            bill.outstandingAmount,
+                          ),
+                        ),
+                      ],
 
                       const SizedBox(height: 30),
                     ],

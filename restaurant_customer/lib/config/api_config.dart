@@ -15,6 +15,7 @@ class ApiConfig {
   static String scanTable(String table, String restaurant, String phone) =>
       '$baseUrl/tables/scan?table_number=$table&restaurant_id=$restaurant&phone=$phone';
   static const String lockTable = '$baseUrl/tables/lock';
+  static const String joinTable = '$baseUrl/tables/join';
 
   // Menu
   static String menu(String restaurantId) =>

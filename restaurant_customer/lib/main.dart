@@ -91,6 +91,17 @@ class _SessionCheckScreenState extends State<SessionCheckScreen> {
         );
         return;
       }
+
+      if (session['settled'] == true) {
+        await SessionService.clearSession();
+        if (!mounted) return;
+        context.read<CartProvider>().clear();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LandingScreen()),
+        );
+        return;
+      }
+
       // Refresh se pehle wala cart bhi wapas load karo
       await context.read<CartProvider>().loadCart();
       if (!mounted) return;
@@ -98,6 +109,20 @@ class _SessionCheckScreenState extends State<SessionCheckScreen> {
       final restaurantId = session['restaurant_id'] as String;
       final tableId = session['table_id'] as int;
       SocketService().connect(restaurantId, tableId.toString());
+      final orderProvider = context.read<OrderProvider>();
+      orderProvider.setSessionId(session['session_id'] as String);
+      orderProvider.setupSocketListeners();
+      await orderProvider.loadBill();
+      if (!mounted) return;
+      if (orderProvider.isSessionSettled) {
+        await SessionService.clearSession();
+        if (!mounted) return;
+        context.read<CartProvider>().clear();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LandingScreen()),
+        );
+        return;
+      }
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
