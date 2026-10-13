@@ -112,7 +112,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                         child: Column(
                           children: [
-                            // Header Logo & Address
+                            // Header Logo & Address (Dynamic for each restaurant)
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -129,43 +129,60 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 12),
-                                const Column(
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Food Plaza',
-                                      style: TextStyle(
+                                      bill.restaurantName.isNotEmpty ? bill.restaurantName : 'Food Plaza',
+                                      style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w900,
                                         color: Color(0xFF1E2022),
                                       ),
                                     ),
-                                    Text(
-                                      'Good Food, Good Mood',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Color(0xFF75787E),
+                                    if (bill.restaurantTagline.isNotEmpty)
+                                      Text(
+                                        bill.restaurantTagline,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF75787E),
+                                        ),
                                       ),
-                                    ),
                                   ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              '123 Food Street, Noida, UP - 201309',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF75787E),
+                            if (bill.restaurantAddress.isNotEmpty || bill.restaurantPhone.isNotEmpty)
+                              const SizedBox(height: 12),
+                            if (bill.restaurantAddress.isNotEmpty)
+                              Text(
+                                bill.restaurantAddress,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF75787E),
+                                ),
                               ),
-                            ),
-                            const Text(
-                              'Phone: +91 98765 43210',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF75787E),
+                            if (bill.restaurantPhone.isNotEmpty)
+                              Text(
+                                'Phone: ${bill.restaurantPhone}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF75787E),
+                                ),
                               ),
-                            ),
+                            if (bill.restaurantGst.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  'GSTIN: ${bill.restaurantGst}',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF75787E),
+                                  ),
+                                ),
+                              ),
 
                             const SizedBox(height: 16),
                             const Text(

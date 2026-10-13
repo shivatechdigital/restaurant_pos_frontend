@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/menu_provider.dart';
 import 'otp_screen.dart';
 import 'off_premise_order_screen.dart';
 
@@ -28,6 +30,12 @@ class _LandingScreenState extends State<LandingScreen> {
     } else if (params['order'] == 'off-premise') {
       _offPremiseRestaurantId = int.tryParse(params['restaurant'] ?? '');
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final rId = _qrRestaurantId ?? (_offPremiseRestaurantId?.toString()) ?? '1';
+      context.read<MenuProvider>().loadMenu(rId);
+    });
   }
 
   @override
@@ -94,14 +102,14 @@ class _LandingScreenState extends State<LandingScreen> {
           const SizedBox(height: 20),
           
           // Welcome Text
-          const Text(
-            'Food Plaza',
-            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1E2022), letterSpacing: -0.5),
+          Text(
+            context.watch<MenuProvider>().restaurantName,
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF1E2022), letterSpacing: -0.5),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Good Food, Good Mood.',
-            style: TextStyle(color: Color(0xFF75787E), fontSize: 14, fontWeight: FontWeight.w500),
+          Text(
+            context.watch<MenuProvider>().restaurantTagline,
+            style: const TextStyle(color: Color(0xFF75787E), fontSize: 14, fontWeight: FontWeight.w500),
           ),
           
           const Padding(

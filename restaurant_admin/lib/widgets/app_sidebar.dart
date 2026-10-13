@@ -12,6 +12,7 @@ import '../screens/staff_screen.dart';
 import '../screens/reports_screen.dart';
 import '../screens/coupons_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/restaurant_profile_screen.dart';
 
 /// Shared left navigation used by MainDashboard and PosCounterScreen.
 /// Wrap in a fixed-width Container for desktop, or in a Drawer for mobile/tablet.
@@ -67,6 +68,7 @@ class AppSidebar extends StatelessWidget {
     {'icon': Icons.badge, 'label': 'Staff Management'},
     {'icon': Icons.bar_chart, 'label': 'Reports'},
     {'icon': Icons.local_offer, 'label': 'Offers & Promotions'},
+    {'icon': Icons.storefront_rounded, 'label': 'Restaurant Details'},
     {'icon': Icons.settings, 'label': 'Settings'},
   ];
 
@@ -89,6 +91,7 @@ class AppSidebar extends StatelessWidget {
       'Staff Management' => const StaffScreen(),
       'Reports' => const ReportsScreen(),
       'Offers & Promotions' => const CouponsScreen(),
+      'Restaurant Details' => const RestaurantProfileScreen(),
       'Settings' => const SettingsScreen(),
       _ => null,
     };

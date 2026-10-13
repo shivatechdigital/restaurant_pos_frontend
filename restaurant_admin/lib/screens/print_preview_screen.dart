@@ -109,6 +109,16 @@ class _PrintPreviewScreenState extends State<PrintPreviewScreen> {
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
+        if ((restaurant['tagline'] ?? '').toString().isNotEmpty)
+          Text(
+            restaurant['tagline'],
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
         if ((restaurant['address'] ?? '').toString().isNotEmpty)
           Text(restaurant['address'], textAlign: TextAlign.center),
         if ((restaurant['phone'] ?? '').toString().isNotEmpty)

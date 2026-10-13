@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../widgets/admin_top_bar.dart';
 import '../widgets/app_sidebar.dart';
+import 'restaurant_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -129,13 +130,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              const Text('Restaurant', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1A237E))),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Restaurant Profile & Bill Branding', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1A237E))),
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const RestaurantProfileScreen()));
+                                    },
+                                    icon: const Icon(Icons.edit, size: 16),
+                                    label: const Text('Edit Details'),
+                                  ),
+                                ],
+                              ),
                               const SizedBox(height: 8),
-                              const Card(child: Column(children: [
-                                ListTile(leading: Icon(Icons.receipt), title: Text('GST'), subtitle: Text('5% (2.5% CGST + 2.5% SGST)')),
-                                Divider(height: 1),
-                                ListTile(leading: Icon(Icons.public), title: Text('Business timezone'), subtitle: Text('Asia/Kolkata by default')),
-                              ])),
+                              Card(
+                                child: Column(
+                                  children: [
+                                    ListTile(
+                                      leading: const CircleAvatar(
+                                        backgroundColor: Color(0xFFFFF2EB),
+                                        child: Icon(Icons.storefront_rounded, color: Color(0xFFF45B15)),
+                                      ),
+                                      title: const Text('Restaurant Name, Tag & Address', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      subtitle: const Text('Configure restaurant branding, tagline, address and contact number printed on customer bills.'),
+                                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                                      onTap: () {
+                                        Navigator.push(context, MaterialPageRoute(builder: (_) => const RestaurantProfileScreen()));
+                                      },
+                                    ),
+                                    const Divider(height: 1),
+                                    const ListTile(leading: Icon(Icons.receipt), title: Text('GST'), subtitle: Text('5% (2.5% CGST + 2.5% SGST)')),
+                                    const Divider(height: 1),
+                                    const ListTile(leading: Icon(Icons.public), title: Text('Business timezone'), subtitle: Text('Asia/Kolkata by default')),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                   ),

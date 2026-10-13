@@ -103,6 +103,10 @@ class WaiterOrderItem {
 class BillData {
   final String tableNumber;
   final String restaurantName;
+  final String restaurantTagline;
+  final String restaurantAddress;
+  final String restaurantPhone;
+  final String restaurantGst;
   final List<BillOrderGroup> orders;
   final List<BillItem> items;
   final double subtotal;
@@ -116,6 +120,10 @@ class BillData {
   BillData({
     required this.tableNumber,
     required this.restaurantName,
+    this.restaurantTagline = '',
+    this.restaurantAddress = '',
+    this.restaurantPhone = '',
+    this.restaurantGst = '',
     required this.orders,
     required this.items,
     required this.subtotal,
@@ -129,9 +137,15 @@ class BillData {
 
   factory BillData.fromJson(Map<String, dynamic> json) {
     final summary = json['summary'] as Map<String, dynamic>;
+    final r = json['restaurant'] as Map<String, dynamic>?;
+
     return BillData(
       tableNumber: json['table_number'] ?? '',
-      restaurantName: json['restaurant_name']?.toString() ?? '',
+      restaurantName: json['restaurant_name']?.toString() ?? r?['name']?.toString() ?? '',
+      restaurantTagline: json['restaurant_tagline']?.toString() ?? r?['tagline']?.toString() ?? '',
+      restaurantAddress: json['restaurant_address']?.toString() ?? r?['address']?.toString() ?? '',
+      restaurantPhone: json['restaurant_phone']?.toString() ?? r?['phone']?.toString() ?? '',
+      restaurantGst: json['restaurant_gst']?.toString() ?? r?['gst_number']?.toString() ?? '',
       orders: (json['orders'] as List? ?? const [])
           .map(
             (order) => BillOrderGroup.fromJson(order as Map<String, dynamic>),

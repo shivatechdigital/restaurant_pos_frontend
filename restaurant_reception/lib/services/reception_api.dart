@@ -54,6 +54,10 @@ class ReceptionApi {
     return r['success'] == true ? r['data'] as Map<String, dynamic> : null;
   }
 
+  Future<Map<String, dynamic>> getRestaurantProfile() async {
+    return _get('/settings/restaurant');
+  }
+
   Future<Map<String, dynamic>> getMenu() async {
     return _get('/menu?restaurant_id=1');
   }

@@ -72,9 +72,9 @@ class _MenuScreenState extends State<MenuScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Food Plaza',
-              style: TextStyle(
+            Text(
+              menu.restaurantName,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF1E2022),
@@ -350,7 +350,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 child: Image.network(
                   'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop', // Burger placeholder
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
                 ),
               ),
             ),
@@ -558,8 +558,9 @@ class _MenuScreenState extends State<MenuScreen> {
     final n = name.toLowerCase();
     if (n.contains('start')) return Icons.restaurant_rounded;
     if (n.contains('main')) return Icons.dinner_dining_rounded;
-    if (n.contains('bev') || n.contains('drink'))
+    if (n.contains('bev') || n.contains('drink')) {
       return Icons.local_cafe_rounded;
+    }
     if (n.contains('dessert') || n.contains('sweet')) return Icons.cake_rounded;
     if (n.contains('pizza')) return Icons.local_pizza_rounded;
     if (n.contains('burger')) return Icons.lunch_dining_rounded;
@@ -666,7 +667,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFFF45B15).withOpacity(0.8),
+                  color: const Color(0xFFF45B15).withValues(alpha: 0.8),
                 ),
               ),
             ],

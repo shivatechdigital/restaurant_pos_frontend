@@ -76,6 +76,40 @@ class ApiService {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> updateOrderPolicy(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/settings/order-policy'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
+    return _decode(res);
+  }
+
+  // ---- RESTAURANT DETAILS (Admin & Multi-Restaurant) ----
+  Future<Map<String, dynamic>> getRestaurantProfile({int? restaurantId}) async {
+    final queryParam = restaurantId != null
+        ? '?restaurant_id=$restaurantId'
+        : '';
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/settings/restaurant$queryParam'),
+      headers: await _headers(),
+    );
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> updateRestaurantProfile(
+    Map<String, dynamic> body,
+  ) async {
+    final res = await http.patch(
+      Uri.parse('${ApiConfig.baseUrl}/settings/restaurant'),
+      headers: await _headers(),
+      body: jsonEncode(body),
+    );
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> getDeliveryPartners() async {
     final res = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/fulfillment/partners'),
@@ -142,17 +176,6 @@ class ApiService {
       Uri.parse('${ApiConfig.baseUrl}/fulfillment/delivery/$orderId/status'),
       headers: await _headers(),
       body: jsonEncode({'status': status}),
-    );
-    return _decode(res);
-  }
-
-  Future<Map<String, dynamic>> updateOrderPolicy(
-    Map<String, dynamic> body,
-  ) async {
-    final res = await http.patch(
-      Uri.parse('${ApiConfig.baseUrl}/settings/order-policy'),
-      headers: await _headers(),
-      body: jsonEncode(body),
     );
     return _decode(res);
   }

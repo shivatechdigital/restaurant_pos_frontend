@@ -128,6 +128,11 @@ class OrderStatus {
 
 class BillData {
   final String tableNumber;
+  final String restaurantName;
+  final String restaurantTagline;
+  final String restaurantAddress;
+  final String restaurantPhone;
+  final String restaurantGst;
   final List<BillItem> items;
   final double subtotal;
   final double cgst;
@@ -139,6 +144,11 @@ class BillData {
 
   BillData({
     required this.tableNumber,
+    this.restaurantName = 'Food Plaza',
+    this.restaurantTagline = 'Good Food, Good Mood',
+    this.restaurantAddress = '',
+    this.restaurantPhone = '',
+    this.restaurantGst = '',
     required this.items,
     required this.subtotal,
     required this.cgst,
@@ -151,8 +161,15 @@ class BillData {
 
   factory BillData.fromJson(Map<String, dynamic> json) {
     final summary = json['summary'] as Map<String, dynamic>;
+    final r = json['restaurant'] as Map<String, dynamic>?;
+
     return BillData(
       tableNumber: json['table_number'] ?? '',
+      restaurantName: json['restaurant_name'] ?? r?['name'] ?? 'Food Plaza',
+      restaurantTagline: json['restaurant_tagline'] ?? r?['tagline'] ?? 'Good Food, Good Mood',
+      restaurantAddress: json['restaurant_address'] ?? r?['address'] ?? '',
+      restaurantPhone: json['restaurant_phone'] ?? r?['phone'] ?? '',
+      restaurantGst: json['restaurant_gst'] ?? r?['gst_number'] ?? '',
       items:
           (json['items'] as List?)?.map((i) => BillItem.fromJson(i)).toList() ??
           [],

@@ -1006,12 +1006,37 @@ class _ReceptionTableMgmtState extends State<ReceptionTableMgmt>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Table ${table['table_number']} Bill',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      billData['restaurant_name'] != null &&
+                              (billData['restaurant_name'] as String).isNotEmpty
+                          ? billData['restaurant_name']
+                          : 'Table ${table['table_number']} Bill',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (billData['restaurant_tagline'] != null &&
+                        (billData['restaurant_tagline'] as String).isNotEmpty)
+                      Text(
+                        billData['restaurant_tagline'],
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    Text(
+                      'Table ${table['table_number']}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
                   '₹${outstanding.toStringAsFixed(2)}',

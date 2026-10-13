@@ -208,9 +208,9 @@ class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Food Plaza',
-              style: TextStyle(
+            Text(
+              menu.restaurantName,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF1E2022),
@@ -394,7 +394,7 @@ class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
                 child: Image.network(
                   'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop',
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
                 ),
               ),
             ),
@@ -648,20 +648,25 @@ class _OffPremiseOrderScreenState extends State<OffPremiseOrderScreen> {
   IconData _getCategoryIcon(String name) {
     final n = name.toLowerCase();
     if (n.contains('start')) return Icons.restaurant_rounded;
-    if (n.contains('south') || n.contains('dosa'))
+    if (n.contains('south') || n.contains('dosa')) {
       return Icons.set_meal_rounded;
+    }
     if (n.contains('break')) return Icons.bakery_dining_rounded;
     if (n.contains('soup')) return Icons.soup_kitchen_rounded;
     if (n.contains('salad')) return Icons.eco_rounded;
-    if (n.contains('burg') || n.contains('sand'))
+    if (n.contains('burg') || n.contains('sand')) {
       return Icons.lunch_dining_rounded;
-    if (n.contains('nood') || n.contains('pasta'))
+    }
+    if (n.contains('nood') || n.contains('pasta')) {
       return Icons.ramen_dining_rounded;
+    }
     if (n.contains('pizza')) return Icons.local_pizza_rounded;
-    if (n.contains('dessert') || n.contains('sweet'))
+    if (n.contains('dessert') || n.contains('sweet')) {
       return Icons.icecream_rounded;
-    if (n.contains('bever') || n.contains('drink'))
+    }
+    if (n.contains('bever') || n.contains('drink')) {
       return Icons.local_cafe_rounded;
+    }
     return Icons.fastfood_rounded;
   }
 
@@ -1387,7 +1392,7 @@ class _OffPremiseHistorySheetState extends State<_OffPremiseHistorySheet> {
                   )
                 : ListView.separated(
                     itemCount: _orders.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, idx) {
                       final o = _orders[idx];
                       final status = o['status'] ?? 'placed';

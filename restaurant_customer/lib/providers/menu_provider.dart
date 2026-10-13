@@ -11,12 +11,20 @@ class MenuProvider extends ChangeNotifier {
   String _error = '';
   String _searchQuery = '';
   bool _vegOnly = false;
+  String _restaurantName = 'Food Plaza';
+  String _restaurantTagline = 'Good Food, Good Mood';
+  String _restaurantAddress = '';
+  String _restaurantPhone = '';
 
   List<Category> get categories => _categories;
   bool get isLoading => _isLoading;
   String get error => _error;
   String get searchQuery => _searchQuery;
   bool get vegOnly => _vegOnly;
+  String get restaurantName => _restaurantName;
+  String get restaurantTagline => _restaurantTagline;
+  String get restaurantAddress => _restaurantAddress;
+  String get restaurantPhone => _restaurantPhone;
 
   // Total items count
   int get totalItems =>
@@ -38,8 +46,21 @@ class MenuProvider extends ChangeNotifier {
       final result = await _api.getMenu(restaurantId);
 
       if (result['success'] == true) {
-        final menuList = result['data']['menu'] as List;
+        final data = result['data'];
+        final menuList = data['menu'] as List? ?? [];
         _categories = menuList.map((c) => Category.fromJson(c)).toList();
+
+        if (data['restaurant'] != null) {
+          final r = data['restaurant'];
+          if (r['name'] != null && (r['name'] as String).isNotEmpty) {
+            _restaurantName = r['name'];
+          }
+          if (r['tagline'] != null && (r['tagline'] as String).isNotEmpty) {
+            _restaurantTagline = r['tagline'];
+          }
+          _restaurantAddress = r['address'] ?? '';
+          _restaurantPhone = r['phone'] ?? '';
+        }
       } else {
         _error = result['message'] ?? 'Menu load nahi hua';
       }
