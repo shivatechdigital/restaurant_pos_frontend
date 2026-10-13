@@ -563,6 +563,15 @@ class ApiService {
     return _decode(res);
   }
 
+  // Full session bill: previous orders + running total for an occupied table.
+  Future<Map<String, dynamic>> getSessionBill(int sessionId) async {
+    final res = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/orders/bill/$sessionId'),
+      headers: await _headers(),
+    );
+    return _decode(res);
+  }
+
   // ---- INVENTORY ----
 
   Future<Map<String, dynamic>> getInventoryRequests({String? status}) async {

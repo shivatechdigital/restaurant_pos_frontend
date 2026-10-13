@@ -1006,6 +1006,7 @@ class _TableManagementScreenState extends State<TableManagementScreen>
               _detailRow(Icons.access_time, 'Occupied Since', '${table['occupied_since'] ?? '45 mins ago'}'),
               _detailRow(Icons.receipt, 'Current Bill', '₹ ${table['current_amount'] ?? 850}'),
               _detailRow(Icons.person_outline, 'Server', '${table['server_name'] ?? 'Rahul'}'),
+              _detailRow(Icons.vpn_key, 'Room Code', '${table['room_code'] ?? '-'}'),
             ],
             const SizedBox(height: 20),
             Row(

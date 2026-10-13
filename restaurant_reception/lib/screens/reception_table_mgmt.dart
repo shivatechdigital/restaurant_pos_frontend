@@ -882,6 +882,17 @@ class _ReceptionTableMgmtState extends State<ReceptionTableMgmt>
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    if (isActive && table['room_code'] != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Room Code: ${table['room_code']}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.brand,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ],

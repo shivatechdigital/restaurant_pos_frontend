@@ -37,6 +37,10 @@ class _PosCounterScreenState extends State<PosCounterScreen> {
   int? _selectedTableId;
   int _availableLoyaltyPoints = 0;
 
+  Map<String, dynamic>? _sessionBill;
+  bool _loadingBill = false;
+  bool _showPreviousOrders = false;
+
   final List<Map<String, dynamic>> _cart = [];
 
   @override
@@ -261,6 +265,8 @@ class _PosCounterScreenState extends State<PosCounterScreen> {
       _manualDiscount.clear();
       _loyaltyPoints.clear();
       _availableLoyaltyPoints = 0;
+      _sessionBill = null;
+      _showPreviousOrders = false;
     });
   }
 
@@ -692,7 +698,11 @@ class _PosCounterScreenState extends State<PosCounterScreen> {
           if (_orderType == 'dine-in') _buildTableSelector(),
           if (_orderType == 'delivery') _buildDeliveryFields(),
           _buildCustomerFields(),
+          if (_sessionBill != null) _buildSessionBillBanner(),
           const SizedBox(height: 12),
+          if (_showPreviousOrders)
+            _buildPreviousOrdersView()
+          else ...[
           Container(
             padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(border: Border(bottom: BorderSide(color: Colors.grey.shade200))),
@@ -795,14 +805,19 @@ class _PosCounterScreenState extends State<PosCounterScreen> {
               ),
             ),
           ),
+          ],
         ],
       ),
     );
   }
 
   Widget _buildTableSelector() {
-    final availableTables =
-        _tables.where((t) => t['status'] == 'available' || t['id'] == _selectedTableId).toList();
+    // Occupied tables stay selectable so staff can add more items to an existing session.
+    final availableTables = [..._tables]..sort((a, b) {
+        final sa = a['status'] == 'available' ? 0 : 1;
+        final sb = b['status'] == 'available' ? 0 : 1;
+        return sa != sb ? sa - sb : 0;
+      });
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: DropdownButtonFormField<int>(
@@ -813,9 +828,204 @@ class _PosCounterScreenState extends State<PosCounterScreen> {
             .map((t) => DropdownMenuItem<int>(
                 value: t['id'] as int, child: Text('${t['table_number']} (${t['status']})')))
             .toList(),
-        onChanged: (value) => setState(() => _selectedTableId = value),
+        onChanged: _onTableSelected,
       ),
     );
+  }
+
+  void _onTableSelected(int? value) {
+    setState(() {
+      _selectedTableId = value;
+      _showPreviousOrders = false;
+      _sessionBill = null;
+    });
+    if (value == null) return;
+
+    final table = _tables.firstWhere((t) => t['id'] == value, orElse: () => null);
+    if (table == null || table['status'] != 'occupied') return;
+
+    final phone = table['occupied_by_phone']?.toString();
+    if (phone != null && phone.isNotEmpty && phone != 'pos') {
+      _customerPhone.text = phone;
+      _lookupLoyalty();
+    }
+
+    final rawSessionId = table['active_session_id'];
+    final sessionId = rawSessionId is int ? rawSessionId : int.tryParse('$rawSessionId');
+    _loadSessionBill(sessionId);
+  }
+
+  Future<void> _loadSessionBill(int? sessionId) async {
+    if (sessionId == null) return;
+    setState(() => _loadingBill = true);
+    try {
+      final result = await _api.getSessionBill(sessionId);
+      if (!mounted) return;
+      if (result['success'] == true) {
+        final bill = result['data'] as Map<String, dynamic>;
+        setState(() {
+          _sessionBill = bill;
+          if (_customerName.text.isEmpty) {
+            final orders = (bill['orders'] as List?) ?? [];
+            final firstName = orders.isNotEmpty ? orders.first['customer_name']?.toString() : null;
+            if (firstName != null && firstName.isNotEmpty && firstName != 'Counter Customer') {
+              _customerName.text = firstName;
+            }
+          }
+        });
+      }
+    } catch (_) {
+      // Bill is supplementary info; placing a new order should still work without it.
+    } finally {
+      if (mounted) setState(() => _loadingBill = false);
+    }
+  }
+
+  Widget _buildSessionBillBanner() {
+    final summary = (_sessionBill?['summary'] as Map<String, dynamic>?) ?? {};
+    final total = (summary['final_amount'] as num?)?.toDouble() ?? 0;
+    final outstanding = (summary['outstanding_amount'] as num?)?.toDouble() ?? 0;
+    final orderCount = ((_sessionBill?['orders'] as List?) ?? []).length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3E0),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange.shade200),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Total Bill (this table)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          Text('\u20b9 ${total.toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+        ]),
+        if (outstanding > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text('Outstanding: \u20b9 ${outstanding.toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 11, color: Colors.red.shade700)),
+          ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+          child: Row(children: [
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _showPreviousOrders = false),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: !_showPreviousOrders ? Colors.black : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('New Order',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: !_showPreviousOrders ? Colors.white : Colors.black54)),
+                ),
+              ),
+            ),
+            Expanded(
+              child: InkWell(
+                onTap: () => setState(() => _showPreviousOrders = true),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _showPreviousOrders ? Colors.black : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('Previous Orders ($orderCount)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _showPreviousOrders ? Colors.white : Colors.black54)),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildPreviousOrdersView() {
+    if (_loadingBill) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 30),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    final orders = (_sessionBill?['orders'] as List?) ?? [];
+    final summary = (_sessionBill?['summary'] as Map<String, dynamic>?) ?? {};
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (orders.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30),
+          child: Center(
+            child: Column(children: [
+              Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey.shade300),
+              const SizedBox(height: 8),
+              Text('No previous orders for this table yet', style: TextStyle(color: Colors.grey.shade500)),
+            ]),
+          ),
+        )
+      else
+        ...orders.map((order) {
+          final items = (order['items'] as List?) ?? [];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Order #${order['order_id']}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                Text('${order['placed_at'] ?? ''}'.split('T').first,
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+              ]),
+              const SizedBox(height: 6),
+              ...items.map((item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Expanded(
+                          child: Text('${item['item_name']} x${item['quantity']}',
+                              style: const TextStyle(fontSize: 12))),
+                      Text('\u20b9 ${_money(item['total_price']).toStringAsFixed(0)}', style: const TextStyle(fontSize: 12)),
+                    ]),
+                  )),
+            ]),
+          );
+        }),
+      const Divider(height: 24),
+      _buildBillRow('Subtotal', '\u20b9 ${(summary['subtotal'] as num? ?? 0).toStringAsFixed(2)}'),
+      const SizedBox(height: 4),
+      _buildBillRow('GST', '\u20b9 ${(summary['total_gst'] as num? ?? 0).toStringAsFixed(2)}'),
+      const SizedBox(height: 4),
+      _buildBillRow('Service charge', '\u20b9 ${(summary['service_charge'] as num? ?? 0).toStringAsFixed(2)}'),
+      const SizedBox(height: 8),
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(8)),
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Total Bill', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          Text('\u20b9 ${(summary['final_amount'] as num? ?? 0).toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        ]),
+      ),
+      if ((summary['paid_amount'] as num? ?? 0) > 0) ...[
+        const SizedBox(height: 4),
+        _buildBillRow('Paid', '\u20b9 ${(summary['paid_amount'] as num? ?? 0).toStringAsFixed(2)}'),
+      ],
+    ]);
   }
 
   Widget _buildDeliveryFields() {

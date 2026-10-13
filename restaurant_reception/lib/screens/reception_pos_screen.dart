@@ -37,6 +37,8 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
   final _searchCtrl = TextEditingController();
   final _instructionsCtrl = TextEditingController();
   final _deliveryAddressCtrl = TextEditingController();
+  final _customerPhoneCtrl = TextEditingController();
+  final _customerNameCtrl = TextEditingController();
 
   // Menu Data
   List<dynamic> _categories = [];
@@ -67,6 +69,8 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
     _searchCtrl.dispose();
     _instructionsCtrl.dispose();
     _deliveryAddressCtrl.dispose();
+    _customerPhoneCtrl.dispose();
+    _customerNameCtrl.dispose();
     super.dispose();
   }
 
@@ -85,6 +89,10 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
       if (widget.initialTable != null) {
         _orderMode = 'dine-in';
         _tableId = _toInt(widget.initialTable['id']);
+        final phone = widget.initialTable['occupied_by_phone']?.toString();
+        if (phone != null && phone.isNotEmpty && phone != 'pos') {
+          _customerPhoneCtrl.text = phone;
+        }
       }
       _loading = false;
     });
@@ -99,7 +107,39 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
     setState(() {
       _existingItems = data['items'] as List? ?? [];
       _existingTotal = _money(data['summary']?['final_amount']);
+      if (_customerPhoneCtrl.text.isEmpty) {
+        final hostPhone = data['host_phone']?.toString();
+        if (hostPhone != null && hostPhone.isNotEmpty && hostPhone != 'pos') {
+          _customerPhoneCtrl.text = hostPhone;
+        }
+      }
+      if (_customerNameCtrl.text.isEmpty) {
+        final orders = (data['orders'] as List?) ?? [];
+        final firstName = orders.isNotEmpty ? orders.first['customer_name']?.toString() : null;
+        if (firstName != null && firstName.isNotEmpty && firstName != 'Counter Customer') {
+          _customerNameCtrl.text = firstName;
+        }
+      }
     });
+  }
+
+  void _onTableDropdownChanged(int? value) {
+    setState(() {
+      _tableId = value;
+      _showPreviousOrders = false;
+      _existingItems = [];
+      _existingTotal = 0;
+      _customerPhoneCtrl.clear();
+      _customerNameCtrl.clear();
+    });
+    if (value == null) return;
+    final table = _tables.firstWhere((t) => _toInt(t['id']) == value, orElse: () => null);
+    final phone = table?['occupied_by_phone']?.toString();
+    if (phone != null && phone.isNotEmpty && phone != 'pos') {
+      _customerPhoneCtrl.text = phone;
+    }
+    final sessionId = table?['active_session_id'];
+    if (sessionId != null) _loadExistingBill(sessionId);
   }
 
   double _money(dynamic v) =>
@@ -247,6 +287,10 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
     final result = await _api.createOrder({
       'order_type': _orderMode,
       if (_tableId != null) 'table_id': _tableId,
+      if (_customerPhoneCtrl.text.trim().isNotEmpty)
+        'customer_phone': _customerPhoneCtrl.text.trim(),
+      if (_customerNameCtrl.text.trim().isNotEmpty)
+        'customer_name': _customerNameCtrl.text.trim(),
       'items': _cart
           .map((c) => {'menu_item_id': c['id'], 'quantity': c['qty']})
           .toList(),
@@ -692,7 +736,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
     final isOccupied = widget.initialTable?['active_session_id'] != null;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       decoration: BoxDecoration(
         color: AppTheme.brand,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(0)),
@@ -705,8 +749,8 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
               children: [
                 Text(tableName,
                     style: const TextStyle(
-                        color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
+                        color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
                 Row(
                   children: [
                     if (guests != null) ...[
@@ -718,8 +762,12 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
                     ],
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 _orderSelectors(),
+                if (_orderMode == 'dine-in' && _tableId != null) ...[
+                  const SizedBox(height: 8),
+                  _customerFields(),
+                ],
               ],
             ),
           ),
@@ -769,7 +817,13 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
                   ? null
                   : (value) => setState(() {
                         _orderMode = value ?? 'dine-in';
-                        if (_orderMode != 'dine-in') _tableId = null;
+                        if (_orderMode != 'dine-in') {
+                          _tableId = null;
+                          _customerPhoneCtrl.clear();
+                          _customerNameCtrl.clear();
+                          _existingItems = [];
+                          _existingTotal = 0;
+                        }
                       }),
             ),
           ),
@@ -790,9 +844,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
                         ))
                     .where((item) => item.value != null)
                     .toList(),
-                onChanged: widget.initialTable != null
-                    ? null
-                    : (value) => setState(() => _tableId = value),
+                onChanged: _onTableDropdownChanged,
               ),
             ),
           ),
@@ -811,6 +863,47 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
           ),
       ],
     );
+  }
+
+  Widget _customerFields() {
+    final isOccupied = _tables
+        .firstWhere((t) => _toInt(t['id']) == _tableId, orElse: () => null)?['active_session_id'] != null;
+    return Row(children: [
+      Expanded(
+        child: TextField(
+          controller: _customerPhoneCtrl,
+          enabled: !isOccupied,
+          keyboardType: TextInputType.phone,
+          style: const TextStyle(fontSize: 12),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+            prefixIcon: const Icon(Icons.phone, size: 16),
+            hintText: 'Customer phone',
+            hintStyle: const TextStyle(fontSize: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: TextField(
+          controller: _customerNameCtrl,
+          enabled: !isOccupied || _customerNameCtrl.text.isEmpty,
+          style: const TextStyle(fontSize: 12),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+            prefixIcon: const Icon(Icons.person_outline, size: 16),
+            hintText: 'Customer name',
+            hintStyle: const TextStyle(fontSize: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      ),
+    ]);
   }
 
   Widget _selectorBox({required IconData icon, required Widget child}) {
@@ -844,7 +937,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
             child: InkWell(
               onTap: () => setState(() => _showPreviousOrders = false),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
@@ -869,7 +962,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
             child: InkWell(
               onTap: () => setState(() => _showPreviousOrders = true),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
@@ -942,17 +1035,17 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
       itemBuilder: (_, i) {
         final item = _cart[i];
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: [Colors.orange.shade100, Colors.orange.shade200]),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(_categoryIcon(item['name']), color: Colors.orange.shade900, size: 22),
+                child: Icon(_categoryIcon(item['name']), color: Colors.orange.shade900, size: 17),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -1095,7 +1188,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
 
   Widget _cartFooter() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
@@ -1105,7 +1198,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
         children: [
           // Special instructions
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             decoration: BoxDecoration(
               color: const Color(0xFFF5F6FA),
               borderRadius: BorderRadius.circular(8),
@@ -1113,7 +1206,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.edit_note, size: 18, color: Colors.grey.shade600),
+                Icon(Icons.edit_note, size: 16, color: Colors.grey.shade600),
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
@@ -1130,55 +1223,58 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           // Bill breakdown
           _billRow('Subtotal', _subtotal),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           _billRow('GST (5%)', _gst),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           _billRow('Service Charge (10%)', _service),
-          const Divider(height: 20),
+          const Divider(height: 14),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Total Amount',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               Text('₹ ${_total.toStringAsFixed(0)}',
                   style: const TextStyle(
                       fontWeight: FontWeight.w900,
-                      fontSize: 20,
+                      fontSize: 18,
                       color: AppTheme.brand)),
             ],
           ),
-          const SizedBox(height: 12),
-          // Buttons
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _saving || _cart.isEmpty ? null : () => _placeOrder(kotOnly: true),
-              icon: const Icon(Icons.print, size: 18),
-              label: Text(_saving ? 'Saving...' : 'Save as KOT'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.brand,
-                backgroundColor: AppTheme.brandLight,
-                side: BorderSide.none,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
-          ),
           const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _saving || _cart.isEmpty ? null : () => _placeOrder(),
-              icon: const Icon(Icons.send, size: 18, color: Colors.white),
-              label: Text(_saving ? 'Placing...' : 'Place Order',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.brand,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+          // Buttons (side by side to save vertical space)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _saving || _cart.isEmpty ? null : () => _placeOrder(kotOnly: true),
+                  icon: const Icon(Icons.print, size: 16),
+                  label: Text(_saving ? 'Saving...' : 'KOT', style: const TextStyle(fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.brand,
+                    backgroundColor: AppTheme.brandLight,
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton.icon(
+                  onPressed: _saving || _cart.isEmpty ? null : () => _placeOrder(),
+                  icon: const Icon(Icons.send, size: 16, color: Colors.white),
+                  label: Text(_saving ? 'Placing...' : 'Place Order',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.brand,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
