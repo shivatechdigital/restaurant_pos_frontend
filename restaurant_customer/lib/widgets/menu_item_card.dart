@@ -16,118 +16,129 @@ class MenuItemCard extends StatelessWidget {
     final qty = cart.getItemQty(item.id);
     final isWide = MediaQuery.sizeOf(context).width >= 700;
 
-    return Card(
-      margin: EdgeInsets.symmetric(horizontal: isWide ? 18 : 12, vertical: 5),
-      elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: isWide ? 16 : 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFECECEC)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         onTap: item.isAvailable ? () => _showCustomizeDialog(context) : null,
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // ---- IMAGE / PLACEHOLDER ----
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  color: Colors.grey[100],
-                  child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          item.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _imagePlaceholder(),
-                        )
-                      : _imagePlaceholder(),
-                ),
+              // ---- IMAGE / PLACEHOLDER (Reference rounded image with shadow) ----
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      color: const Color(0xFFF9FAFB),
+                      child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                          ? Image.network(
+                              item.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                            )
+                          : _imagePlaceholder(),
+                    ),
+                  ),
+                  Positioned(top: 6, left: 6, child: _vegBadge(item.isVeg)),
+                ],
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
 
               // ---- DETAILS ----
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Veg/Non-Veg + Name
-                    Row(
-                      children: [
-                        _vegBadge(item.isVeg),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            item.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-
-                    // Description
                     Text(
-                      item.description,
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
-                        height: 1.3,
+                      item.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        color: Color(0xFF1E2022),
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (item.description.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        item.description,
+                        style: const TextStyle(
+                          color: Color(0xFF75787E),
+                          fontSize: 12,
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const SizedBox(height: 6),
 
-                    // Price + Time + Stock
+                    // Price + prep time + customizable tag
                     Row(
                       children: [
                         Text(
                           '₹${item.price.toStringAsFixed(0)}',
                           style: const TextStyle(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w900,
                             fontSize: 16,
                             color: Color(0xFFF45B15),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon(
-                          Icons.access_time,
-                          size: 13,
-                          color: Colors.grey[400],
-                        ),
-                        Text(
-                          ' ${item.prepTimeMinutes} min',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 11,
+                        if (item.prepTimeMinutes > 0) ...[
+                          const Icon(
+                            Icons.schedule_rounded,
+                            size: 13,
+                            color: Color(0xFF9EA1A8),
                           ),
-                        ),
-                        if (item.modifiers.isNotEmpty) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${item.prepTimeMinutes}m',
+                            style: const TextStyle(
+                              color: Color(0xFF9EA1A8),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        if (item.modifiers.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1,
+                              horizontal: 6,
+                              vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.orange[50],
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFFFFF2EB),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Text(
-                              'Customizable',
+                            child: const Text(
+                              'Custom',
                               style: TextStyle(
-                                color: Colors.orange[700],
+                                color: Color(0xFFF45B15),
                                 fontSize: 9,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],
@@ -143,15 +154,15 @@ class MenuItemCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Text(
-                    'Out of Stock',
+                    'Sold Out',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: Color(0xFF9CA3AF),
                       fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 )
@@ -168,29 +179,36 @@ class MenuItemCard extends StatelessWidget {
 
   Widget _imagePlaceholder() {
     return Center(
-      child: Icon(Icons.restaurant, size: 28, color: Colors.grey[300]),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFF2EB),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.restaurant_rounded,
+          size: 24,
+          color: Color(0xFFF45B15),
+        ),
+      ),
     );
   }
 
   Widget _vegBadge(bool isVeg) {
+    final color = isVeg ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
     return Container(
-      width: 16,
-      height: 16,
+      width: 14,
+      height: 14,
       decoration: BoxDecoration(
-        border: Border.all(
-          color: isVeg ? Colors.green : Colors.red,
-          width: 1.5,
-        ),
+        color: Colors.white,
+        border: Border.all(color: color, width: 1.5),
         borderRadius: BorderRadius.circular(3),
       ),
       child: Center(
         child: Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: isVeg ? Colors.green : Colors.red,
-            shape: BoxShape.circle,
-          ),
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
       ),
     );

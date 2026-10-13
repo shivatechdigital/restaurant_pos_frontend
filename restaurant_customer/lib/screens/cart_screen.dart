@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../config/responsive.dart';
 import '../config/theme.dart';
-import '../models/menu_model.dart';
 import '../providers/cart_provider.dart';
 import '../providers/menu_provider.dart';
 import '../providers/order_provider.dart';
@@ -171,7 +170,7 @@ class _CartScreenState extends State<CartScreen> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: cart.items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final item = cart.items[index];
                         return _buildCartItemTile(context, cart, item, index);
@@ -457,7 +456,7 @@ class _CartScreenState extends State<CartScreen> {
                       ? Image.network(
                           item.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
+                          errorBuilder: (_, _, _) =>
                               _buildPlaceholderImage(item.isVeg),
                         )
                       : _buildPlaceholderImage(item.isVeg),
@@ -741,7 +740,7 @@ class _CartScreenState extends State<CartScreen> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: suggestions.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final item = suggestions[index];
               return Container(
@@ -765,7 +764,7 @@ class _CartScreenState extends State<CartScreen> {
                             ? Image.network(
                                 item.imageUrl!,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
+                                errorBuilder: (_, _, _) =>
                                     _buildPlaceholderImage(item.isVeg),
                               )
                             : _buildPlaceholderImage(item.isVeg),

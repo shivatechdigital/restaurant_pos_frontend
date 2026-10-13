@@ -7,7 +7,6 @@ import '../services/api_service.dart';
 import '../services/session_service.dart';
 import '../config/socket_service.dart';
 import 'menu_screen.dart';
-import '../config/responsive.dart';
 
 class OtpScreen extends StatefulWidget {
   final String tableNumber;
