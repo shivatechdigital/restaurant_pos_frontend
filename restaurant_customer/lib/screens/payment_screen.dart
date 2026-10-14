@@ -1,6 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:typed_data';
 
+import 'package:file_saver/file_saver.dart';
+import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../models/order_model.dart';
 import '../providers/order_provider.dart';
 import 'thank_you_screen.dart';
 
@@ -20,6 +27,7 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   bool _loading = true;
+  bool _exporting = false;
 
   @override
   void initState() {
@@ -67,11 +75,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
               color: Color(0xFF1E2022),
             ),
             tooltip: 'Download Invoice',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Downloading bill...')),
-              );
-            },
+            onPressed: bill == null || _exporting
+                ? null
+                : () => _downloadBill(bill, order.currentOrderId),
           ),
         ],
         bottom: PreferredSize(
@@ -133,7 +139,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      bill.restaurantName.isNotEmpty ? bill.restaurantName : 'Food Plaza',
+                                      bill.restaurantName.isNotEmpty
+                                          ? bill.restaurantName
+                                          : 'Food Plaza',
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w900,
@@ -152,7 +160,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 ),
                               ],
                             ),
-                            if (bill.restaurantAddress.isNotEmpty || bill.restaurantPhone.isNotEmpty)
+                            if (bill.restaurantAddress.isNotEmpty ||
+                                bill.restaurantPhone.isNotEmpty)
                               const SizedBox(height: 12),
                             if (bill.restaurantAddress.isNotEmpty)
                               Text(
@@ -352,6 +361,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             // Bill Totals
                             _billRow('Items Total', bill.subtotal),
                             const SizedBox(height: 6),
+                            _billRow('Service Charge', bill.serviceCharge),
+                            const SizedBox(height: 6),
                             _billRow(
                               'Discount',
                               0,
@@ -462,11 +473,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           subtitle: 'Pay at counter after your meal',
                           iconBg: const Color(0xFFFFF2EB),
                           iconColor: const Color(0xFFF45B15),
-                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please pay at the counter.'),
-                            ),
-                          ),
+                          onTap: () => ScaffoldMessenger.of(context)
+                              .showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please pay at the counter.'),
+                                ),
+                              ),
                         ),
                         const SizedBox(height: 10),
                         _paymentTile(
@@ -528,13 +540,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Bill shared successfully!'),
-                            ),
-                          );
-                        },
+                        onPressed: _exporting
+                            ? null
+                            : () => _shareBill(bill, order.currentOrderId),
                         icon: const Icon(Icons.share_rounded, size: 18),
                         label: const Text(
                           'Share Bill',
@@ -557,6 +565,319 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Future<void> _downloadBill(BillData bill, int? orderId) async {
+    if (_exporting) return;
+    setState(() => _exporting = true);
+    try {
+      final bytes = await _createBillPdf(bill, orderId);
+      await FileSaver.instance.saveFile(
+        name: _billFileName(orderId),
+        bytes: bytes,
+        fileExtension: 'pdf',
+        mimeType: MimeType.pdf,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Bill PDF downloaded.')));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not download bill: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _shareBill(BillData bill, int? orderId) async {
+    if (_exporting) return;
+    final sharePositionOrigin = Rect.fromLTWH(
+      0,
+      0,
+      MediaQuery.sizeOf(context).width,
+      MediaQuery.sizeOf(context).height,
+    );
+    setState(() => _exporting = true);
+    try {
+      final bytes = await _createBillPdf(bill, orderId);
+      final fileName = '${_billFileName(orderId)}.pdf';
+      await SharePlus.instance.share(
+        ShareParams(
+          title: 'Bill from ${bill.restaurantName}',
+          subject: 'Bill for order ${orderId ?? 'ORD12345'}',
+          text: 'Bill from ${bill.restaurantName}',
+          files: [
+            XFile.fromData(bytes, mimeType: 'application/pdf', name: fileName),
+          ],
+          fileNameOverrides: [fileName],
+          sharePositionOrigin: sharePositionOrigin,
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not share bill: $error')));
+      }
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  String _billFileName(int? orderId) {
+    final safeOrderId = (orderId?.toString() ?? 'ORD12345').replaceAll(
+      RegExp(r'[^A-Za-z0-9_-]'),
+      '_',
+    );
+    return 'bill_$safeOrderId';
+  }
+
+  Future<Uint8List> _createBillPdf(BillData bill, int? orderId) async {
+    final now = DateTime.now();
+    final document = pw.Document();
+    final muted = PdfColors.grey700;
+    final divider = PdfColors.grey300;
+
+    document.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.fromLTRB(38, 42, 38, 42),
+        maxPages: 1000,
+        footer: (context) => pw.Container(
+          alignment: pw.Alignment.centerRight,
+          margin: const pw.EdgeInsets.only(top: 12),
+          child: pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount}',
+            style: pw.TextStyle(fontSize: 9, color: muted),
+          ),
+        ),
+        build: (pdfContext) => [
+          pw.Center(
+            child: pw.Text(
+              bill.restaurantName.isNotEmpty
+                  ? bill.restaurantName
+                  : 'Food Plaza',
+              textAlign: pw.TextAlign.center,
+              style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          if (bill.restaurantTagline.isNotEmpty)
+            pw.Center(
+              child: pw.Text(
+                bill.restaurantTagline,
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(fontSize: 10, color: muted),
+              ),
+            ),
+          if (bill.restaurantAddress.isNotEmpty)
+            pw.Center(
+              child: pw.Text(
+                bill.restaurantAddress,
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(fontSize: 9, color: muted),
+              ),
+            ),
+          if (bill.restaurantPhone.isNotEmpty)
+            pw.Center(
+              child: pw.Text(
+                'Phone: ${bill.restaurantPhone}',
+                style: pw.TextStyle(fontSize: 9, color: muted),
+              ),
+            ),
+          if (bill.restaurantGst.isNotEmpty)
+            pw.Center(
+              child: pw.Text(
+                'GSTIN: ${bill.restaurantGst}',
+                style: pw.TextStyle(fontSize: 9, color: muted),
+              ),
+            ),
+          pw.SizedBox(height: 18),
+          pw.Center(
+            child: pw.Text(
+              'TAX INVOICE',
+              style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.SizedBox(height: 12),
+          _pdfInfoRow('Order No', '#${orderId ?? 'ORD12345'}'),
+          _pdfInfoRow(
+            'Date',
+            '${now.day} ${_monthName(now.month)} ${now.year}',
+          ),
+          _pdfInfoRow('Time', TimeOfDay.fromDateTime(now).format(context)),
+          _pdfInfoRow('Table No', widget.tableNumber),
+          _pdfInfoRow('Type', 'Dine In'),
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 12),
+            child: pw.Divider(color: divider),
+          ),
+          _pdfItemHeader(muted),
+          pw.SizedBox(height: 6),
+          ...bill.items.map((item) => _pdfItemRow(item, muted)),
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 12),
+            child: pw.Divider(color: divider),
+          ),
+          _pdfAmountRow('Items Total', bill.subtotal),
+          _pdfAmountRow('Service Charge', bill.serviceCharge),
+          _pdfAmountRow('CGST (2.5%)', bill.cgst),
+          _pdfAmountRow('SGST (2.5%)', bill.sgst),
+          pw.Padding(
+            padding: const pw.EdgeInsets.symmetric(vertical: 8),
+            child: pw.Divider(color: PdfColors.black, thickness: 1.2),
+          ),
+          _pdfAmountRow('Grand Total', bill.finalAmount, bold: true),
+          _pdfAmountRow('Paid', bill.paidAmount),
+          _pdfAmountRow('Balance Due', bill.outstandingAmount, bold: true),
+          pw.SizedBox(height: 24),
+          pw.Center(
+            child: pw.Text(
+              'Thank You! Visit Again for More Delicious Food',
+              textAlign: pw.TextAlign.center,
+              style: pw.TextStyle(fontSize: 10, color: muted),
+            ),
+          ),
+        ],
+      ),
+    );
+    return document.save();
+  }
+
+  pw.Widget _pdfInfoRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        children: [
+          pw.SizedBox(
+            width: 90,
+            child: pw.Text(
+              label,
+              style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              value,
+              style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _pdfItemHeader(PdfColor muted) {
+    return pw.Row(
+      children: [
+        pw.Expanded(
+          flex: 3,
+          child: pw.Text(
+            'Item',
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: muted,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ),
+        pw.Expanded(
+          child: pw.Text(
+            'Qty',
+            textAlign: pw.TextAlign.center,
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: muted,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ),
+        pw.Expanded(
+          flex: 1,
+          child: pw.Text(
+            'Price',
+            textAlign: pw.TextAlign.right,
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: muted,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ),
+        pw.Expanded(
+          flex: 1,
+          child: pw.Text(
+            'Amount',
+            textAlign: pw.TextAlign.right,
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: muted,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  pw.Widget _pdfItemRow(BillItem item, PdfColor muted) {
+    final unitPrice = item.quantity == 0 ? 0 : item.totalPrice / item.quantity;
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Expanded(
+            flex: 3,
+            child: pw.Text(item.name, style: const pw.TextStyle(fontSize: 9)),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              '${item.quantity}',
+              textAlign: pw.TextAlign.center,
+              style: pw.TextStyle(fontSize: 9, color: muted),
+            ),
+          ),
+          pw.Expanded(
+            flex: 1,
+            child: pw.Text(
+              'INR ${unitPrice.toStringAsFixed(2)}',
+              textAlign: pw.TextAlign.right,
+              style: pw.TextStyle(fontSize: 9, color: muted),
+            ),
+          ),
+          pw.Expanded(
+            flex: 1,
+            child: pw.Text(
+              'INR ${item.totalPrice.toStringAsFixed(2)}',
+              textAlign: pw.TextAlign.right,
+              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _pdfAmountRow(String label, double amount, {bool bold = false}) {
+    final style = pw.TextStyle(
+      fontSize: bold ? 11 : 10,
+      fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal,
+    );
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 3),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: style),
+          pw.Text('INR ${amount.toStringAsFixed(2)}', style: style),
+        ],
+      ),
     );
   }
 

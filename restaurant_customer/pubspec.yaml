@@ -41,6 +41,9 @@ dependencies:
   shared_preferences: ^2.5.5
   web: ^1.1.1
   js: ^0.7.2
+  pdf: ^3.13.1
+  share_plus: ^13.3.1
+  file_saver: ^0.7.0
 
 dev_dependencies:
   flutter_test:
