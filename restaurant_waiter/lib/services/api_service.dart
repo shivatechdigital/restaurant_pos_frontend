@@ -213,6 +213,14 @@ class ApiService {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> serveOrderItem(int orderId, int itemId) async {
+    final res = await http.patch(
+      Uri.parse(ApiConfig.serveOrderItem(orderId, itemId)),
+      headers: await _headers(),
+    );
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> cancelOrderManually(
     int orderId,
     String reason,

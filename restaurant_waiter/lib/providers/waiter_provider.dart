@@ -135,6 +135,8 @@ class WaiterProvider extends ChangeNotifier {
                 ? old.items
                       .map(
                         (item) => WaiterOrderItem(
+                          id: item.id,
+                          orderId: item.orderId,
                           name: item.name,
                           quantity: item.quantity,
                           totalPrice: item.totalPrice,
@@ -149,6 +151,51 @@ class WaiterProvider extends ChangeNotifier {
         return true;
       }
       return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> serveOrderItem(int orderId, int itemId) async {
+    try {
+      final result = await _api.serveOrderItem(orderId, itemId);
+      if (result['success'] != true) return false;
+
+      final data = Map<String, dynamic>.from(result['data'] as Map);
+      final orderIndex = _activeOrders.indexWhere(
+        (order) => order.orderId == orderId,
+      );
+      if (orderIndex < 0) return true;
+
+      final oldOrder = _activeOrders[orderIndex];
+      final items = oldOrder.items.map((item) {
+        if (item.id != itemId) return item;
+        return WaiterOrderItem(
+          id: item.id,
+          orderId: item.orderId,
+          name: item.name,
+          quantity: item.quantity,
+          totalPrice: item.totalPrice,
+          status: 'served',
+        );
+      }).toList();
+      _activeOrders[orderIndex] = WaiterOrder(
+        orderId: oldOrder.orderId,
+        orderIds: oldOrder.orderIds,
+        sessionId: oldOrder.sessionId,
+        tableId: oldOrder.tableId,
+        tableNumber: oldOrder.tableNumber,
+        status: data['order_status']?.toString() ?? oldOrder.status,
+        customerName: oldOrder.customerName,
+        customerPhone: oldOrder.customerPhone,
+        totalAmount: oldOrder.totalAmount,
+        placedAt: oldOrder.placedAt,
+        minutesAgo: oldOrder.minutesAgo,
+        notes: oldOrder.notes,
+        items: items,
+      );
+      notifyListeners();
+      return true;
     } catch (e) {
       return false;
     }

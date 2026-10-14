@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../models/order_model.dart';
 import '../models/table_model.dart';
 import '../providers/waiter_provider.dart';
@@ -13,7 +14,8 @@ class _TableOrders {
 
   List<WaiterOrderItem> get items => orders.expand((o) => o.items).toList();
   double get total => orders.fold<double>(0, (sum, o) => sum + o.totalAmount);
-  int get minutesAgo => orders.map((o) => o.minutesAgo).reduce((a, b) => a > b ? a : b);
+  int get minutesAgo =>
+      orders.map((o) => o.minutesAgo).reduce((a, b) => a > b ? a : b);
   String get orderIds => orders.map((o) => '#${o.orderId}').join(', ');
 }
 
@@ -47,7 +49,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
     super.dispose();
   }
 
-  List<_TableOrders> _groupByTable(List<WaiterOrder> orders, List<TableModel> tables) {
+  List<_TableOrders> _groupByTable(
+    List<WaiterOrder> orders,
+    List<TableModel> tables,
+  ) {
     final byTable = <int, List<WaiterOrder>>{};
     for (final order in orders) {
       byTable.putIfAbsent(order.tableId, () => []).add(order);
@@ -65,8 +70,11 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
           );
           return _TableOrders(table, entry.value);
         })
-        .where((group) =>
-            _query.isEmpty || group.table.tableNumber.toLowerCase().contains(_query))
+        .where(
+          (group) =>
+              _query.isEmpty ||
+              group.table.tableNumber.toLowerCase().contains(_query),
+        )
         .toList()
       ..sort((a, b) => a.minutesAgo.compareTo(b.minutesAgo) * -1);
   }
@@ -90,14 +98,17 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
       _ => pendingGroups,
     };
 
-    final selected = visibleGroups.where((g) => g.table.id == _selectedTableId).firstOrNull;
+    final selected = visibleGroups
+        .where((g) => g.table.id == _selectedTableId)
+        .firstOrNull;
 
     return WaiterShell(
       route: WaiterRoute.serve,
       title: 'Serve Orders',
       subtitle: 'Deliver happiness, one table at a time! \u2764\ufe0f',
       searchHint: 'Search by table, order id or item...',
-      onSearchChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+      onSearchChanged: (value) =>
+          setState(() => _query = value.trim().toLowerCase()),
       onRefresh: () {
         waiter.loadTables();
         waiter.loadActiveOrders();
@@ -142,7 +153,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
                   : Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 2, child: _grid(visibleGroups, crossAxisCount: 3)),
+                        Expanded(
+                          flex: 2,
+                          child: _grid(visibleGroups, crossAxisCount: 3),
+                        ),
                         const SizedBox(width: 12),
                         SizedBox(width: 320, child: _detailPanel(selected)),
                       ],
@@ -172,7 +186,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
   Widget _tabChip(String label, int tab) {
     final selected = _tab == tab;
     return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 11.5, color: selected ? Colors.white : kInk)),
+      label: Text(
+        label,
+        style: TextStyle(fontSize: 11.5, color: selected ? Colors.white : kInk),
+      ),
       selected: selected,
       selectedColor: kRed,
       backgroundColor: Colors.white,
@@ -190,7 +207,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
           children: [
             Icon(Icons.done_all, size: 56, color: Colors.grey[300]),
             const SizedBox(height: 10),
-            const Text('Koi table nahi hai is tab mein', style: TextStyle(color: Colors.grey)),
+            const Text(
+              'Koi table nahi hai is tab mein',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       );
@@ -209,8 +229,16 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
   }
 
   Widget _tableCard(_TableOrders group) {
-    const palette = [kRed, Colors.orange, Colors.blue, Colors.purple, Colors.teal, Colors.pink];
-    final color = palette[group.table.tableNumber.hashCode.abs() % palette.length];
+    const palette = [
+      kRed,
+      Colors.orange,
+      Colors.blue,
+      Colors.purple,
+      Colors.teal,
+      Colors.pink,
+    ];
+    final color =
+        palette[group.table.tableNumber.hashCode.abs() % palette.length];
     final selected = _selectedTableId == group.table.id;
     final allServed = group.orders.every((o) => o.isServed);
     return InkWell(
@@ -221,7 +249,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
         decoration: BoxDecoration(
           color: color.withValues(alpha: .07),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: selected ? color : color.withValues(alpha: .25), width: selected ? 2 : 1),
+          border: Border.all(
+            color: selected ? color : color.withValues(alpha: .25),
+            width: selected ? 2 : 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,10 +264,17 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
                 Expanded(
                   child: Text(
                     'Table ${group.table.tableNumber}',
-                    style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 14),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: color,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
-                Text(group.orderIds, style: TextStyle(fontSize: 10, color: color)),
+                Text(
+                  group.orderIds,
+                  style: TextStyle(fontSize: 10, color: color),
+                ),
               ],
             ),
             Text(
@@ -248,16 +286,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: group.items
-                    .take(4)
                     .map(
                       (item) => Padding(
                         padding: const EdgeInsets.symmetric(vertical: 2),
-                        child: Row(
-                          children: [
-                            Expanded(child: Text(item.name, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
-                            Text('x${item.quantity}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                          ],
-                        ),
+                        child: _itemServeRow(item, compact: true),
                       ),
                     )
                     .toList(),
@@ -268,7 +300,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
               child: ElevatedButton.icon(
                 onPressed: allServed ? null : () => _markAllServed(group),
                 icon: const Icon(Icons.check, size: 16),
-                label: Text(allServed ? 'All Served' : 'Mark All as Served', style: const TextStyle(fontSize: 12)),
+                label: Text(
+                  allServed ? 'All Served' : 'Mark All as Served',
+                  style: const TextStyle(fontSize: 12),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: allServed ? Colors.grey : Colors.green,
                   foregroundColor: Colors.white,
@@ -296,7 +331,10 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
           children: [
             Icon(Icons.touch_app, color: Colors.blueGrey, size: 32),
             SizedBox(height: 8),
-            Text('Select a table', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Select a table',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 3),
             Text(
               'Tap a table card to review its order before serving.',
@@ -308,7 +346,11 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
       );
     }
     final allServed = group.orders.every((o) => o.isServed);
-    final notes = group.orders.map((o) => o.notes).whereType<String>().where((n) => n.trim().isNotEmpty).toList();
+    final notes = group.orders
+        .map((o) => o.notes)
+        .whereType<String>()
+        .where((n) => n.trim().isNotEmpty)
+        .toList();
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -332,11 +374,18 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
                     children: [
                       Text(
                         'Table ${group.table.tableNumber}',
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                       Text(
                         '${group.minutesAgo}m ago \u2022 ${group.orderIds}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 10.5),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10.5,
+                        ),
                       ),
                     ],
                   ),
@@ -350,28 +399,15 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Order Items (${group.items.length})', style: const TextStyle(fontWeight: FontWeight.w900)),
+                  Text(
+                    'Order Items (${group.items.length})',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
                   const SizedBox(height: 8),
                   ...group.items.map(
                     (item) => Padding(
                       padding: const EdgeInsets.symmetric(vertical: 5),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item.name, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
-                                Text('x${item.quantity}', style: TextStyle(fontSize: 10, color: Colors.blueGrey.shade500)),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            item.status == 'served' ? Icons.check_circle : Icons.radio_button_unchecked,
-                            color: item.status == 'served' ? Colors.green : Colors.grey.shade400,
-                          ),
-                        ],
-                      ),
+                      child: _itemServeRow(item),
                     ),
                   ),
                   if (notes.isNotEmpty) ...[
@@ -385,8 +421,18 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Special Note:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: kRed)),
-                          Text(notes.join(' \u2022 '), style: const TextStyle(fontSize: 11.5)),
+                          const Text(
+                            'Special Note:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                              color: kRed,
+                            ),
+                          ),
+                          Text(
+                            notes.join(' \u2022 '),
+                            style: const TextStyle(fontSize: 11.5),
+                          ),
                         ],
                       ),
                     ),
@@ -413,7 +459,9 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
                   child: ElevatedButton.icon(
                     onPressed: allServed ? null : () => _markAllServed(group),
                     icon: const Icon(Icons.room_service_rounded, size: 16),
-                    label: Text(allServed ? 'Already Served' : 'Update Serve Status'),
+                    label: Text(
+                      allServed ? 'Already Served' : 'Update Serve Status',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: allServed ? Colors.grey : kRed,
                       foregroundColor: Colors.white,
@@ -429,8 +477,73 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
     );
   }
 
+  Widget _itemServeRow(WaiterOrderItem item, {bool compact = false}) {
+    final order = context
+        .read<WaiterProvider>()
+        .activeOrders
+        .where((candidate) => candidate.orderId == item.orderId)
+        .firstOrNull;
+    final canServe = order?.status == 'ready' && item.status != 'served';
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 36,
+          height: 36,
+          child: Checkbox(
+            value: item.status == 'served',
+            visualDensity: VisualDensity.compact,
+            activeColor: Colors.green,
+            onChanged: canServe ? (_) => _serveItem(item) : null,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            item.name,
+            style: TextStyle(
+              fontSize: compact ? 12 : 12.5,
+              fontWeight: FontWeight.w600,
+              color: item.status == 'served' ? Colors.green.shade700 : null,
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: compact ? 1 : 2,
+          ),
+        ),
+        Text(
+          'x${item.quantity}',
+          style: const TextStyle(fontSize: 11, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _serveItem(WaiterOrderItem item) async {
+    final success = await context.read<WaiterProvider>().serveOrderItem(
+      item.orderId,
+      item.id,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? '${item.name} marked as served'
+              : 'Could not update ${item.name}',
+        ),
+        backgroundColor: success ? Colors.green : Colors.red,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
   Future<void> _markAllServed(_TableOrders group) async {
-    if (!await confirmServeIfNeeded(context, 'Table ${group.table.tableNumber}')) return;
+    if (!await confirmServeIfNeeded(
+      context,
+      'Table ${group.table.tableNumber}',
+    )) {
+      return;
+    }
     if (!mounted) return;
     final waiter = context.read<WaiterProvider>();
     var allOk = true;
@@ -441,7 +554,11 @@ class _ServeOrdersScreenState extends State<ServeOrdersScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(allOk ? '✅ Table ${group.table.tableNumber} served!' : 'Unable to update some orders.'),
+        content: Text(
+          allOk
+              ? '✅ Table ${group.table.tableNumber} served!'
+              : 'Unable to update some orders.',
+        ),
         backgroundColor: allOk ? Colors.green : Colors.red,
       ),
     );

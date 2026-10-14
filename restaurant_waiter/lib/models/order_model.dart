@@ -60,7 +60,12 @@ class WaiterOrder {
       notes: json['notes']?.toString(),
       items:
           (json['items'] as List?)
-              ?.map((i) => WaiterOrderItem.fromJson(i as Map<String, dynamic>))
+              ?.map(
+                (i) => WaiterOrderItem.fromJson(
+                  i as Map<String, dynamic>,
+                  orderId: _parseInt(json['id']),
+                ),
+              )
               .toList() ??
           [],
     );
@@ -76,20 +81,29 @@ class WaiterOrder {
 }
 
 class WaiterOrderItem {
+  final int id;
+  final int orderId;
   final String name;
   final int quantity;
   final double totalPrice;
   final String status;
 
   WaiterOrderItem({
+    this.id = 0,
+    this.orderId = 0,
     required this.name,
     required this.quantity,
     required this.totalPrice,
     required this.status,
   });
 
-  factory WaiterOrderItem.fromJson(Map<String, dynamic> json) {
+  factory WaiterOrderItem.fromJson(
+    Map<String, dynamic> json, {
+    required int orderId,
+  }) {
     return WaiterOrderItem(
+      id: _parseInt(json['id']),
+      orderId: orderId,
       name: json['item_name']?.toString() ?? 'Unknown',
       quantity: _parseInt(json['quantity'], fallback: 1),
       totalPrice: json['total_price'] != null
@@ -141,11 +155,22 @@ class BillData {
 
     return BillData(
       tableNumber: json['table_number'] ?? '',
-      restaurantName: json['restaurant_name']?.toString() ?? r?['name']?.toString() ?? '',
-      restaurantTagline: json['restaurant_tagline']?.toString() ?? r?['tagline']?.toString() ?? '',
-      restaurantAddress: json['restaurant_address']?.toString() ?? r?['address']?.toString() ?? '',
-      restaurantPhone: json['restaurant_phone']?.toString() ?? r?['phone']?.toString() ?? '',
-      restaurantGst: json['restaurant_gst']?.toString() ?? r?['gst_number']?.toString() ?? '',
+      restaurantName:
+          json['restaurant_name']?.toString() ?? r?['name']?.toString() ?? '',
+      restaurantTagline:
+          json['restaurant_tagline']?.toString() ??
+          r?['tagline']?.toString() ??
+          '',
+      restaurantAddress:
+          json['restaurant_address']?.toString() ??
+          r?['address']?.toString() ??
+          '',
+      restaurantPhone:
+          json['restaurant_phone']?.toString() ?? r?['phone']?.toString() ?? '',
+      restaurantGst:
+          json['restaurant_gst']?.toString() ??
+          r?['gst_number']?.toString() ??
+          '',
       orders: (json['orders'] as List? ?? const [])
           .map(
             (order) => BillOrderGroup.fromJson(order as Map<String, dynamic>),
