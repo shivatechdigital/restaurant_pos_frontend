@@ -46,7 +46,10 @@ class ApiService {
     );
     final data = _decode(res);
 
-    if (data['success'] == true && data['data']?['token'] != null) {
+    if (data['success'] == true &&
+        data['data']?['token'] != null &&
+        (data['data']?['user']?['role'] == 'kitchen' ||
+            data['data']?['user']?['role'] == 'admin')) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('kitchen_token', data['data']['token']);
       await prefs.setString('kitchen_phone', phone);

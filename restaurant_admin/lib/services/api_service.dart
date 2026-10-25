@@ -46,7 +46,9 @@ class ApiService {
       body: jsonEncode({'phone': phone, 'otp': otp}),
     );
     final data = _decode(res);
-    if (data['success'] == true && data['data']?['token'] != null) {
+    if (data['success'] == true &&
+        data['data']?['token'] != null &&
+        data['data']?['user']?['role'] == 'admin') {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('admin_token', data['data']['token']);
       await prefs.setString('admin_phone', phone);
@@ -546,6 +548,15 @@ class ApiService {
     if (status != null && status.isNotEmpty) url += '&status=$status';
     if (orderId != null) url += '&order_id=$orderId';
     final res = await http.get(Uri.parse(url), headers: await _headers());
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> deleteOrders(List<int> orderIds) async {
+    final res = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/orders/bulk'),
+      headers: await _headers(),
+      body: jsonEncode({'order_ids': orderIds}),
+    );
     return _decode(res);
   }
 

@@ -20,6 +20,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   final _searchCtrl = TextEditingController();
   final Set<int> _selectedIds = {};
   String _statusFilter = '';
+  bool _isBulkDeleting = false;
 
   @override
   void initState() {
@@ -47,6 +48,83 @@ class _OrdersScreenState extends State<OrdersScreen> {
       final sm = status == null || s == status;
       return tm && sm;
     }).length;
+  }
+
+  int? _orderId(dynamic order) => int.tryParse(order['id']?.toString() ?? '');
+
+  void _toggleVisibleSelection(Set<int> visibleIds, bool select) {
+    setState(() {
+      if (select) {
+        _selectedIds.addAll(visibleIds);
+      } else {
+        _selectedIds.removeAll(visibleIds);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedOrders() async {
+    if (_selectedIds.isEmpty || _isBulkDeleting) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete selected orders permanently?'),
+        content: Text(
+          'This will permanently delete ${_selectedIds.length} selected order(s) and linked payment records. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            icon: const Icon(Icons.delete_forever_outlined),
+            label: const Text('Delete permanently'),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isBulkDeleting = true);
+    try {
+      final result = await ApiService().deleteOrders(_selectedIds.toList());
+      if (!mounted) return;
+      if (result['success'] != true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result['message']?.toString() ?? 'Orders delete nahi hue',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(_selectedIds.clear);
+      await context.read<AdminProvider>().loadOrders();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message']?.toString() ?? 'Selected orders deleted',
+          ),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Delete failed: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isBulkDeleting = false);
+    }
   }
 
   String _time(dynamic v) {
@@ -435,6 +513,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   // Table
   Widget _table(List filtered, bool isMobile) {
+    final visibleIds = filtered.map(_orderId).whereType<int>().toSet();
+    final allVisibleSelected =
+        visibleIds.isNotEmpty && visibleIds.every(_selectedIds.contains);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -484,17 +565,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   headingRowColor: WidgetStateProperty.all(
                     const Color(0xFFF8F9FB),
                   ),
-                  columns: const [
-                    DataColumn(label: Text('')),
-                    DataColumn(label: Text('Order ID', style: _h)),
-                    DataColumn(label: Text('Type', style: _h)),
-                    DataColumn(label: Text('Table / Customer', style: _h)),
-                    DataColumn(label: Text('Items', style: _h)),
-                    DataColumn(label: Text('Amount', style: _h)),
-                    DataColumn(label: Text('Status', style: _h)),
-                    DataColumn(label: Text('Payment', style: _h)),
-                    DataColumn(label: Text('Time', style: _h)),
-                    DataColumn(label: Text('Actions', style: _h)),
+                  columns: [
+                    DataColumn(
+                      label: Tooltip(
+                        message: 'Select all orders shown',
+                        child: Checkbox(
+                          value: allVisibleSelected,
+                          activeColor: const Color(0xFFE67E22),
+                          onChanged: visibleIds.isEmpty
+                              ? null
+                              : (select) => _toggleVisibleSelection(
+                                  visibleIds,
+                                  select == true,
+                                ),
+                        ),
+                      ),
+                    ),
+                    const DataColumn(label: Text('Order ID', style: _h)),
+                    const DataColumn(label: Text('Type', style: _h)),
+                    const DataColumn(
+                      label: Text('Table / Customer', style: _h),
+                    ),
+                    const DataColumn(label: Text('Items', style: _h)),
+                    const DataColumn(label: Text('Amount', style: _h)),
+                    const DataColumn(label: Text('Status', style: _h)),
+                    const DataColumn(label: Text('Payment', style: _h)),
+                    const DataColumn(label: Text('Time', style: _h)),
+                    const DataColumn(label: Text('Actions', style: _h)),
                   ],
                   rows: filtered.map((o) => _row(o)).toList(),
                 ),
@@ -510,7 +607,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   );
 
   DataRow _row(dynamic o) {
-    final id = o['id'];
+    final id = _orderId(o);
     final selected = _selectedIds.contains(id);
     final type = (o['order_type'] ?? 'dine-in').toString();
     final status = (o['status'] ?? 'placed').toString();
@@ -527,13 +624,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             value: selected,
             activeColor: const Color(0xFFE67E22),
             onChanged: (v) {
-              setState(() {
-                if (v == true) {
-                  _selectedIds.add(id);
-                } else {
-                  _selectedIds.remove(id);
-                }
-              });
+              if (id != null) _toggleVisibleSelection({id}, v == true);
             },
           ),
         ),
@@ -749,9 +840,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
             const SizedBox(width: 10),
             OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.library_add_check_outlined, size: 18),
-              label: const Text('Bulk Actions'),
+              onPressed: _selectedIds.isEmpty || _isBulkDeleting
+                  ? null
+                  : _deleteSelectedOrders,
+              icon: _isBulkDeleting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.delete_outline, size: 18),
+              label: Text(
+                _selectedIds.isEmpty
+                    ? 'Delete selected'
+                    : 'Delete selected (${_selectedIds.length})',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+              ),
             ),
             const SizedBox(width: 10),
             OutlinedButton.icon(

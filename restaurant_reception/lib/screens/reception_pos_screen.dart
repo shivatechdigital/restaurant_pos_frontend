@@ -79,6 +79,7 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
     final tables = await _api.getTables();
     if (!mounted) return;
 
+    dynamic sessionId;
     setState(() {
       _categories = menuResp['success'] == true
           ? (menuResp['data']?['menu'] ?? [])
@@ -93,12 +94,13 @@ class _ReceptionPosScreenState extends State<ReceptionPosScreen> {
         if (phone != null && phone.isNotEmpty && phone != 'pos') {
           _customerPhoneCtrl.text = phone;
         }
+        sessionId = widget.initialTable['active_session_id'];
       }
-      _loading = false;
     });
 
-    final sessionId = widget.initialTable?['active_session_id'];
     if (sessionId != null) await _loadExistingBill(sessionId);
+    if (!mounted) return;
+    setState(() => _loading = false);
   }
 
   Future<void> _loadExistingBill(dynamic sessionId) async {
